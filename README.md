@@ -4,6 +4,19 @@
 
 ## 🔨 기능 요구사항
 
+### 회원 가입
+
+`join.jsp` - `<form>` ⮂ `JoinController.java` - `join()` ⮂ `JoinService.java` - `join()` ⮂ `MemberRepository.java` - `addMember()`, `EmailUtil.java` - `sendEmail()`
+
+- [ ] 회원 가입 시 다음과 같은 제약 사항이 있습니다.
+  - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능합니다.
+  - [ ] 이미 존재하는 아이디로는 가입할 수 없습니다.
+  - [x] 비밀번호는 8~16자의 영문 대/소문자, 숫자를 사용하고, 특수문자를 1개 이상 포함해야 합니다.
+  - [x] 이름은 공백 또는 빈 칸일 수 없습니다.
+  - [x] 이메일은 공백 또는 빈 칸일 수 없고 이메일 형식이어야 합니다.
+- [x] 패스워드는 DB에 암호화 후 저장되어야 합니다.
+- [x] 인증 링크를 포함한 이메일을 보내야 합니다.
+
 ### 프로젝트 환경 설정
 
 #### Docker DB
@@ -293,3 +306,67 @@ feat: add user login feature
 This commit adds the user login feature including authentication and session management.
 Fixes #42
 ```
+
+### Bean Validation
+
+#### `context-bean.xml`
+
+```xml
+<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+	<property name="defaultEncoding" value="UTF-8" />
+		<property name="basename" value="classpath:errors" />
+</bean>
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+	<property name="defaultLocale" value="ko" />
+</bean>
+```
+
+##### `bean id="validator"`
+
+`LocalValidatorFactoryBean` 을 글로벌 Validator로 등록한다. 이 Validator는 `@NotNull` 같은 애노테이션을 보고 검증을 수행한다. 이렇게 글로벌 Validator가 적용되어 있기 때문에, `@Valid` , `@Validated` 만 적용하면 된다. 검증 오류가 발생하면 `FieldError` , `ObjectError` 를 생성해서 `BindingResult` 에 담아준다.
+
+##### `bean id="messageSource"`
+
+오류 메시지 파일의 위치를 인식할 수 있게 이 설정을 추가한다.
+
+##### `bean id="localeResolver"`
+
+세션을 통해 사용자의 로케일 정보를 관리합니다.
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>javax.validation</groupId>
+	<artifactId>validation-api</artifactId>
+	<version>2.0.1.Final</version>
+</dependency>
+<dependency>
+	<groupId>org.hibernate.validator</groupId>
+	<artifactId>hibernate-validator</artifactId>
+	<version>6.2.5.Final</version>
+</dependency>
+<dependency>
+	<groupId>org.glassfish</groupId>
+	<artifactId>jakarta.el</artifactId>
+	<version>3.0.3</version>
+</dependency>
+```
+
+- `jakarta.validation-api`: Bean Validation 인터페이스
+- `hibernate-validator`: 구현체
+
+#### `errors.properties`
+
+`NotBlank`라는 오류 코드를 통해 `MessageCodesResolver`가 어떤 메시지 코드를 순서대로 만드는지 알아보자. 처음이 구체적이고 마지막이 덜 구체적이다.
+
+##### @NotBlank
+
+- NotBlank.item.itemName
+- NotBlank.itemName
+- NotBlank.java.lang.String
+- NotBlank
+
+- 오류 코드는 구체적 ⭢ 덜 구체적인 것을 순서로 만들어준다.
+- 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다.
