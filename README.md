@@ -204,13 +204,13 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
    ls ~/.ssh/id_ed25519*
    ```
 
-   - `id_ed25519`: 개인 키
-   - `id_ed25519.pub`: 공개 키
+   - `id_ed25519`: Private key
+   - `id_ed25519.pub`: Public key
 
 3. **Github에 공개 키 추가**
 
    - 공개 키 파일(`~/.ssh/id_ed25519.pub`)의 내용을 복사합니다.
-   - Github 웹사이트에 로그인 후, `Settings` -> `SSH and GPG keys`로 이동합니다.
+   - Github 웹사이트에 로그인 후, `Settings` ⭢ `SSH and GPG keys`로 이동합니다.
    - `New SSH key` 버튼을 클릭하고, 제목과 키 내용을 입력 후 `Add SSH key` 버튼을 클릭합니다.
 
 4. **SSH Agent에 키 추가**
@@ -221,9 +221,75 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
    ```
 
 5. **Github과의 연결 테스트**
+
    ```bash
    ssh -T git@github.com
    ```
+
    - 연결이 성공하면 Github로부터 환영 메시지를 받을 것입니다.
 
-자세한 내용은 [해당 링크](https://goddaehee.tistory.com/254)를 참고하세요.
+### Git 브랜치 전략 - GitFlow
+
+#### Feature Branch
+
+- **목적**: 새로운 기능을 개발하기 위한 브랜치입니다.
+- **네이밍**: `feature/기능명` 형식으로 브랜치를 생성합니다.
+- **생성 시점**: 기능 개발이 시작될 때마다 생성하며, develop 브랜치에서 분기됩니다.
+- **특징**: 개발 작업이 완료되면 develop 브랜치로 병합됩니다.
+
+#### Hotfix Branch
+
+- **목적**: 프로덕션 환경에서 발생한 긴급한 버그를 수정하기 위한 브랜치입니다.
+- **네이밍**: `hotfix/버그명` 형식으로 브랜치를 생성합니다.
+- **생성 시점**: 긴급한 버그 발견 시 main 브랜치에서 분기됩니다.
+- **특징**: 수정이 완료되면 main과 develop 브랜치로 병합됩니다.
+
+#### Bugfix Branch
+
+- **목적**: 개발 중 또는 QA 과정에서 발견된 일반적인 버그를 수정하기 위한 브랜치입니다.
+- **네이밍**: `bugfix/버그명` 형식으로 브랜치를 생성합니다.
+- **생성 시점**: 버그 발견 시 develop 브랜치에서 분기됩니다.
+- **특징**: 수정이 완료되면 develop 브랜치로 병합됩니다.
+
+#### Develop Branch
+
+- **목적**: 개발 중인 기능들이 통합되는 메인 개발 브랜치입니다.
+- **생성 시점**: 초기 프로젝트 설정 후 생성되며 feature 브랜치에서의 작업들이 병합됩니다.
+- **특징**: 개발 중인 기능을 통합하고 QA 및 테스트를 진행합니다.
+
+#### Main Branch
+
+- **목적**: 프로덕션에 배포되는 안정된 소스 코드가 저장되는 메인 브랜치입니다.
+- **생성 시점**: 초기 프로젝트 설정 후 생성되며 main 브랜치에는 배포 가능한 안정된 코드만이 반영됩니다.
+- **특징**: 모든 기능이 통합되고 검증된 후 main 브랜치로 배포 준비가 완료됩니다.
+- **주의**: 배포 후에는 main 브랜치에서만 분기될 수 있습니다.
+
+### Conventional Commits
+
+#### 형식
+
+```
+<type>: <description>
+[optional body]
+[optional footer]
+```
+
+- **`<type>`**: 커밋의 종류를 나타냅니다.
+  - feat: 새로운 기능 추가
+  - fix: 버그 수정
+  - docs: 문서 변경 (예: README.md 수정)
+  - style: 코드의 포맷팅, 세미콜론 누락 등 스타일 변경
+  - refactor: 코드 리팩토링 (기능 변경 없이 코드 구조 변경)
+  - test: 테스트 코드 추가, 변경
+  - chore: 빌드 프로세스, 도구 설정 변경 등 그 외의 변경
+- **`<description>`**: 커밋의 간단한 설명입니다. 어떤 변경이 이루어졌는지 명확하게 작성합니다.
+- **`[optional body]`**: 변경의 상세한 설명을 추가할 수 있는 부분입니다. 변경 내용이나 이유 등을 자세히 설명할 때 사용합니다.
+- **`[optional footer]`**: 커밋에 관련된 이슈 번호 등 추가 정보를 포함할 수 있는 부분입니다.
+
+#### 예시
+
+```
+feat: add user login feature
+This commit adds the user login feature including authentication and session management.
+Fixes #42
+```
