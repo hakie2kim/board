@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Root 영역 : service, dao -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/util
+		http://www.springframework.org/schema/util/spring-util-4.1.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+	<!-- 공용 설정 파일 -->
+	<util:properties id="config" location="classpath:*config.ini" />
+
+	<!-- Annotation 기반의 Component Scan 필터(service package 만 검색) -->
+	<context:component-scan base-package="com.portfolio.www">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Service" />
+		<context:include-filter type="regex"
+			expression="\.*\.dao\.*" />
+	</context:component-scan>
+	
+	<!-- MyBatis start -->
+	<!-- DAO 구현체 역할을 대신 해주는 클래스 기본설정 4가지가 필요하다. -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 1. DB에 접속 하기 위해서 설정 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 2. myBatis 기본 설정 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 3. query가 적힌 xml 위치 -->
+		<property name="mapperLocations" value="classpath:sql/SQL.*.xml" />
+		<!-- 4. 트랜잭션 관리 -->
+		<property name="transactionFactory">
+			<bean class="org.mybatis.spring.transaction.SpringManagedTransactionFactory" />
+		</property>
+	</bean>
+	<!-- 작업 지시서 DAO 위치를 지정해야 사용 할 수 있음 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.portfolio.www.dao.mybatis" />
+	</bean>
+	<!-- MyBatis end -->
+
+	<!-- 트랜잭션 관리를 위한 bean -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+</beans>
