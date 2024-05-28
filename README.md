@@ -8,7 +8,7 @@
 
 `join.jsp` - `<form>` ⮂ `JoinController.java` - `join()` ⮂ `JoinService.java` - `join()` ⮂ `MemberRepository.java` - `addMember()`, `EmailUtil.java` - `sendEmail()`
 
-- [x] 회원 가입 시 다음과 같은 제약 사항이 있습니다.
+- [x] 회원 가입 시 폼에는 다음과 같은 제약 사항이 있습니다.
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능합니다.
   - [x] 이미 존재하는 아이디로는 가입할 수 없습니다.
   - [x] 비밀번호는 8~16자의 영문 대/소문자, 숫자를 사용하고, 특수문자를 1개 이상 포함해야 합니다.
@@ -361,17 +361,14 @@ Fixes #42
 
 `NotBlank`라는 오류 코드를 통해 `MessageCodesResolver`가 어떤 메시지 코드를 순서대로 만드는지 알아보자. 처음이 구체적이고 마지막이 덜 구체적이다.
 
-##### `@NotBlank`
-
 ```
-NotBlank.item.itemName
-NotBlank.itemName
-NotBlank.java.lang.String
-NotBlank
+1. NotBlank.item.itemName
+2. NotBlank.itemName
+3. NotBlank.java.lang.String
+4. NotBlank
 ```
 
-- 오류 코드는 구체적 ⭢ 덜 구체적인 것을 순서로 만들어준다.
-- 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다.
+오류 코드는 구체적 ⭢ 덜 구체적인 것을 우선으로 만들어준다. 이때 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다. 설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `아이디는 공백일 수 없습니다` 를 출력한다.
 
 ### BindingResult - `rejectValue()`
 
