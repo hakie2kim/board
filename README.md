@@ -1,4 +1,4 @@
-# 포트폴리오
+# 게시판
 
 ## 💬 소개
 
@@ -8,14 +8,14 @@
 
 `join.jsp` - `<form>` ⮂ `JoinController.java` - `join()` ⮂ `JoinService.java` - `join()` ⮂ `MemberRepository.java` - `addMember()`, `EmailUtil.java` - `sendEmail()`
 
-- [ ] 회원 가입 시 다음과 같은 제약 사항이 있습니다.
+- [x] 회원 가입 시 다음과 같은 제약 사항이 있습니다.
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능합니다.
-  - [ ] 이미 존재하는 아이디로는 가입할 수 없습니다.
+  - [x] 이미 존재하는 아이디로는 가입할 수 없습니다.
   - [x] 비밀번호는 8~16자의 영문 대/소문자, 숫자를 사용하고, 특수문자를 1개 이상 포함해야 합니다.
   - [x] 이름은 공백 또는 빈 칸일 수 없습니다.
   - [x] 이메일은 공백 또는 빈 칸일 수 없고 이메일 형식이어야 합니다.
 - [x] 패스워드는 DB에 암호화 후 저장되어야 합니다.
-- [x] 인증 링크를 포함한 이메일을 보내야 합니다.
+- [ ] 인증 링크를 포함한 이메일을 보내야 합니다.
 
 ### 프로젝트 환경 설정
 
@@ -361,12 +361,54 @@ Fixes #42
 
 `NotBlank`라는 오류 코드를 통해 `MessageCodesResolver`가 어떤 메시지 코드를 순서대로 만드는지 알아보자. 처음이 구체적이고 마지막이 덜 구체적이다.
 
-##### @NotBlank
+##### `@NotBlank`
 
-- NotBlank.item.itemName
-- NotBlank.itemName
-- NotBlank.java.lang.String
-- NotBlank
+```
+NotBlank.item.itemName
+NotBlank.itemName
+NotBlank.java.lang.String
+NotBlank
+```
 
 - 오류 코드는 구체적 ⭢ 덜 구체적인 것을 순서로 만들어준다.
 - 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다.
+
+### BindingResult - `rejectValue()`
+
+`rejectValue()` 메서드는 Spring Framework의 BindingResult 인터페이스에서 제공하는 메서드로, 특정 필드에 대한 검증 오류를 등록하는 데 사용됩니다.
+
+#### 메서드 선언부
+
+```java
+void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage);
+```
+
+- `field`: 오류가 발생한 필드의 이름
+- `errorCode`: 오류 코드를 지정. 이 오류 코드는 메시지에 등록된 코드가 아니라 `MessageCodesResolver`를 위한 오류 코드입니다.
+- `defaultMessage`: 오류 메시지를 찾을 수 없을 때 사용하는 기본 메시지
+- `errorArgs`: 오류 메시지에서 사용할 추가 인수
+
+#### 사용 이유 - 축약된 오류 코드
+
+`rejectValue()` 메서드를 사용하면 오류 코드를 간단하게 입력할 수 있습니다. 예를 들어, `range.item.price` 대신 `range`로만 지정해도 오류 메시지를 잘 찾아서 출력합니다. 이러한 기능은 `MessageCodesResolver` 덕분입니다.
+
+#### 원리
+
+이러한 축약된 오류 코드를 사용할 수 있는 이유는
+
+```java
+bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
+```
+
+```properties
+range.item.price=가격은 {0} ~ {1} 까지 허용합니다.
+```
+
+위와 같이 `rejectValue()`를 통해 오류를 등록하고 `errors.properties`에 오류 메시지를 등록하면 `MessageCodesResolver`는 `range`라는 오류 코드를 다음과 같은 순서로 변환하여 메시지를 찾는다.
+
+1. `range.item.price`
+2. `range.price`
+3. `range.item`
+4. `range`
+
+설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `가격은 1000 ~ 1000000 까지 허용합니다.` 를 출력한다.

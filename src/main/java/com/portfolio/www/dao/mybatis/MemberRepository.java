@@ -8,4 +8,5 @@ import com.portfolio.www.dto.JoinForm;
 public interface MemberRepository {
 	// public int addMember(HashMap<String, String> params);
 	public int addMember(JoinForm joinForm);
+	public int countMemberId(String memberId);
 }

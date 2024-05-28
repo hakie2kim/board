@@ -6,4 +6,8 @@
     	INSERT INTO forum.`member` (member_id, passwd, member_nm, email, join_dtm)
 		VALUES(#{memberId}, #{passwd}, #{memberNm}, #{email}, DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'));
     </insert>
+    <select id="countMemberId">
+    	SELECT COUNT(*) FROM forum.`member`
+    	WHERE member_id = #{memberId}
+    </select>
 </mapper>

@@ -33,9 +33,14 @@ public class JoinController {
 	
 	@PostMapping("/auth/join.do")
 	public String join(@Validated @ModelAttribute JoinForm joinForm, BindingResult bindingResult) {
+		if (joinService.doesMemberIdExist(joinForm.getMemberId())) {
+			bindingResult.rejectValue("memberId", "exist", null, null);
+		}
+		
 		if (bindingResult.hasErrors()) {
 			return "auth/join";
 		}
+		
 		joinService.join(joinForm);
 		return "redirect:/auth/loginPage.do";
 	}

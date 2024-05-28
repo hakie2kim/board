@@ -19,7 +19,15 @@ public class JoinService {
 	 * }
 	 */
 	
+	public boolean doesMemberIdExist(String memberId) {
+		if (memberRepository.countMemberId(memberId) == 1) {
+			return true;
+		}
+		return false;
+	}
+	
 	public int join(JoinForm joinForm) {
+		// 패스워드 암호화
 		joinForm.setPasswd(PasswordUtil.encPassword(joinForm.getPasswd()));
 		return memberRepository.addMember(joinForm);
 	}
