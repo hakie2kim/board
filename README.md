@@ -8,14 +8,16 @@
 
 `join.jsp` - `<form>` ⮂ `JoinController.java` - `join()` ⮂ `JoinService.java` - `join()` ⮂ `MemberRepository.java` - `addMember()`, `EmailUtil.java` - `sendEmail()`
 
-- [x] 회원 가입 시 폼에는 다음과 같은 제약 사항이 있습니다.
+- 회원 가입 시 폼에는 다음과 같은 제약 사항이 있습니다.
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능합니다.
   - [x] 이미 존재하는 아이디로는 가입할 수 없습니다.
   - [x] 비밀번호는 8~16자의 영문 대/소문자, 숫자를 사용하고, 특수문자를 1개 이상 포함해야 합니다.
   - [x] 이름은 공백 또는 빈 칸일 수 없습니다.
   - [x] 이메일은 공백 또는 빈 칸일 수 없고 이메일 형식이어야 합니다.
 - [x] 패스워드는 DB에 암호화 후 저장되어야 합니다.
-- [ ] 인증 링크를 포함한 이메일을 보내야 합니다.
+- 사용자 이메일 유효 여부를 인증해야 합니다.
+  - [x] 인증 링크를 포함한 이메일을 보내야 합니다.
+  - [ ] 사용자가 인증 링크를 클릭한 후 인증 여부가 DB에 반영되어야 합니다.
 
 ### 프로젝트 환경 설정
 
@@ -409,3 +411,166 @@ range.item.price=가격은 {0} ~ {1} 까지 허용합니다.
 4. `range`
 
 설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `가격은 1000 ~ 1000000 까지 허용합니다.` 를 출력한다.
+
+### RedirectAttributes - `addAttributes()` vs. `addFlashAttributes()`
+
+Spring MVC에서 RedirectAttributes는 리다이렉트 시에 데이터를 전달하기 위해 사용됩니다. 이때 데이터를 넘기는 방법으로 두 가지 메서드 addAttribute()와 addFlashAttribute()는 서로 다른 방식으로 데이터를 처리하고 전달합니다.
+
+#### `addAttribute()`
+
+- URL에 쿼리 파라미터 형식으로 데이터를 추가합니다.
+- URL에 쿼리 파라미터로 추가되므로 짧은 정보와 노출되어도 상관없는 정보를 전달할 때 사용합니다.
+- 데이터를 브라우저의 주소창에 표시합니다.
+- 여러 요청에 걸쳐 접근이 가능합니다.
+
+#### `addFlashAttribute()`
+
+- 데이터를 세션에 임시로 저장하여 다음 요청에서만 접근 가능하게 합니다.
+- 데이터가 URL에 표시되지 않습니다.
+- 임시로 세션에 저장되며 다음 요청 후 자동으로 삭제됩니다.
+- 검증 결과나 성공/실패 메시지 등 임시 데이터에 적합합니다.
+- 보다 폐쇄적인 데이터 전달 방식입니다.
+
+### 이메일
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>org.mybatis</groupId>
+	<artifactId>mybatis</artifactId>
+	<version>3.5.16</version>
+</dependency>
+<dependency>
+	<groupId>org.mybatis</groupId>
+	<artifactId>mybatis-spring</artifactId>
+	<version>2.1.2</version>
+</dependency>
+```
+
+#### `src/main/resources/context-beans.xml`
+
+```xml
+<bean id="javaMailSender"
+	class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	<property name="host" value="smtp.naver.com" />
+	<property name="port" value="587" />
+	<property name="username" value="${email.username}" />
+	<property name="password" value="${email.password}" />
+	<property name="javaMailProperties">
+		<props>
+			<prop key="mail.smtp.starttls.enable">true</prop>
+		</props>
+	</property>
+</bean>
+```
+
+이 설정을 통해 `JavaMailSenderImpl` 객체가 생성되고 이를 통해 이메일 전송을 위한 SMTP 서버와 연결할 수 있게 됩니다.
+
+- `host`: 이메일을 전송할 SMTP 서버의 호스트 주소
+- `port`: SMTP 서버의 포트 번호
+- `username`: SMTP 서버에 로그인할 사용자 이름
+- `password`: SMTP 서버에 로그인할 비밀번호
+- `javaMailProperties`: 추가적인 JavaMail 속성 설정을 위한 프로퍼티.
+- `mail.smtp.starttls.enable`: TLS(Transport Layer Security) 사용 설정. 여기서는 true로 설정하여 TLS를 사용합니다.
+
+```xml
+<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+	<constructor-arg name="javaMailSender" ref="javaMailSender" />
+	<constructor-arg name="senderEmail" value="${email.username}" />
+</bean>
+```
+
+이 설정을 통해 `EmailUtil` 객체가 생성되고 이를 통해 이메일 전송 기능을 사용할 수 있습니다. `EmailUtil` 클래스는 `JavaMailSender`를 사용하여 이메일을 전송하는 유틸리티 역할을 합니다.
+
+- `javaMailSender`: 이메일 전송에 사용할 JavaMailSender 객체를 주입
+- `senderEmail`: 이메일을 전송할 발신자의 이메일 주소
+
+### Jasypt를 이용한 이메일, 비밀번호 암호화
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>org.jasypt</groupId>
+	<artifactId>jasypt-spring31</artifactId>
+	<version>1.9.3</version>
+</dependency>
+```
+
+#### `src/main/resources/context-beans.xml`
+
+```xml
+<bean id="encryptorConfig" class="org.jasypt.encryption.pbe.config.EnvironmentPBEConfig">
+	<!-- 사용할 암호화 알고리즘 -->
+	<property name="algorithm" value="PBEWithMD5AndDES" />
+	<!-- PBE (패스워드 기반 암호화) 암호 설정 -->
+	<property name="password" value="password" />
+</bean>
+```
+
+이 설정을 통해 암호화 설정 정보를 담은 `EnvironmentPBEConfig` 객체가 생성됩니다.
+
+- `algorithm`: 사용할 암호화 알고리즘. PBEWithMD5AndDES는 MD5 해시와 DES 암호화 알고리즘을 사용하는 패스워드 기반 암호화(PBE) 알고리즘입니다.
+- `password`: 암호화에 사용할 패스워드. 이 패스워드는 암호화된 값을 복호화할 때에도 사용됩니다.
+
+```xml
+<bean id="encryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+	<property name="config" ref="encryptorConfig" />
+</bean>
+```
+
+이 설정을 통해 암호화 및 복호화를 수행할 `StandardPBEStringEncryptor` 객체가 생성됩니다. `StandardPBEStringEncryptor`는 앞서 설정한 암호화 알고리즘과 패스워드를 사용하여 문자열을 암호화 및 복호화합니다.
+
+- `config`: 암호화 설정을 참조
+
+```xml
+<bean class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+	<constructor-arg ref="encryptor" />
+	<property name="locations" value="classpath:email.properties" />
+</bean>
+```
+
+- `ref="encryptor"`: 암호화 및 복호화를 수행할 `StandardPBEStringEncryptor` 객체를 주입
+- `locations`: 암호화된 속성 값을 포함하는 프로퍼티 파일의 위치를 지정
+
+#### `src/main/resources/email.properties`
+
+```properties
+email.username=ENC(...)
+email.password=ENC(...)
+```
+
+`ENC(...)`로 표시된 부분은 암호화된 값이며 Spring 애플리케이션에서는 이를 자동으로 복호화하여 사용할 수 있습니다. 이 설정은 민감한 정보를 보호하면서도 애플리케이션이 쉽게 접근할 수 있도록 합니다.
+
+### `bean` 수동 등록 방법
+
+1. 필드 사용
+
+```xml
+<bean id="joinDao" class="com.portfolio.www.dao.JoinDao">
+  <property name="dataSource" ref="dataSource" />
+</bean>
+```
+
+- `name`: 주입 받을 `JoinDao`의 필드(멤버 변수) 이름
+- `ref`: `JoinDao`의 필드(멤버 변수) `dataSource`의 참조
+
+2. 생성자 사용
+
+```xml
+<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+	<constructor-arg name="javaMailSender" ref="javaMailSender" />
+	<constructor-arg name="senderEmail" value="${email.username}" />
+</bean>
+```
+
+- `value`: 생성자의 파라미터 이름 `senderEmail`의 인자로 올 값
+
+### PRG (Post/Redirect/Get)
+
+`JoinController.java`의 `join()`에서 리다이렉트를 하는 이유는 무엇일까? 만약 리다이렉트를을 하지 않았다고 해보자. 회원 가입을 한 페이지에서 새로 고침을 한 후 DB를 확인 해보면 회원이 또 추가됐다는 것을 알 수 있다. 새로고침을 할 때마다 기존 입력한 회원이 계속해서 추가되는 것이다. 왜 이런 현상이 발생하는 것일까?
+
+결론부터 말하자면 웹 브라우저의 새로 고침은 마지막에 서버에 전송한 데이터를 다시 전송하는 작업을 한다. 그렇기 때문에 `POST /auth/join.do` + `회원 가입 폼에서 입력한 회원 데이터` 이 작업이 계속해서 반복된다. 따라서 회원 내용은 같고 `member_seq`만 증가한 `Member`의 데이터가 계속 DB에 추가된다. 여기에서 왜 리다이렉트를 로그인 페이지(`/loginPage.do`)로 하는지 알 수 있다. 다시 로그인 페이지(`/loginPage.do`)로 이동하게 되면 아무리 새로고침을 해도 웹 브라우저는 그저 로그인 페이지(`/loginPage.do`)만을 보여주게 된다.
+
+위와 같은 방식을 `Post/Redirect/Get` 줄여서 `PRG`라 하며 Spring의 `redirect:이동할 주소`와 더불어 `RedirectAttributes` 기능을 사용하게 되면 폼 전송 후 자동으로 리다이렉트 하게 된다.

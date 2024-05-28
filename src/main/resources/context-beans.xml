@@ -67,4 +67,38 @@
 	</bean>
 	<!-- Bean Validation 관련 end -->
 	
+	<!-- 이메일 전송하기 위한 bean 설정 start -->
+	<bean id="javaMailSender"
+		class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.naver.com" />
+		<property name="port" value="587" />
+		<property name="username" value="${email.username}" />
+		<property name="password" value="${email.password}" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+			</props>
+		</property>
+	</bean>
+	<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+		<constructor-arg name="javaMailSender" ref="javaMailSender" />
+		<constructor-arg name="senderEmail" value="${email.username}" />
+	</bean>
+	<!-- 이메일 전송하기 위한 bean 설정 end -->
+	
+	<!-- Jasypt를 이용한 이메일, 비밀번호 암호화 Start -->
+	<bean id="encryptorConfig" class="org.jasypt.encryption.pbe.config.EnvironmentPBEConfig">
+		<!-- 사용할 암호화 알고리즘 -->
+		<property name="algorithm" value="PBEWithMD5AndDES" />
+		<!-- PBE (패스워드 기반 암호화) 암호 설정 -->
+		<property name="password" value="password" />
+	</bean>
+	<bean id="encryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+		<property name="config" ref="encryptorConfig" />
+	</bean>
+	<bean class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+		<constructor-arg ref="encryptor" />
+		<property name="locations" value="classpath:email.properties" />
+	</bean>
+	<!-- Jasypt를 이용한 이메일, 비밀번호 암호화 End -->
 </beans>
