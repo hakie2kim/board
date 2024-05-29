@@ -105,6 +105,14 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 </configuration>
 ```
 
+###### `<typeAliases>`
+
+MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는 `com.portfolio.www.dto` 패키지 내의 모든 클래스를 대상으로 `@Alias` 애너테이션이 없다면 클래스 이름을 소문자로 변환하여 별칭으로 등록합니다. 예를 들어, `com.portfolio.www.dto.Member` 클래스는 `member`라는 별칭으로 등록됩니다.
+
+###### `<typeAlias>`
+
+개별 클래스를 명시적으로 별칭과 매핑할 수 있습니다. 이 방법은 패키지 단위 설정 대신 특정 클래스에 대해 별칭을 설정할 때 사용됩니다. 주석 처리된 예제에서는 com.edu.dto.Employees 클래스를 Employees라는 별칭으로 설정합니다.
+
 #### Tiles
 
 ##### `pom.xml`
@@ -183,6 +191,63 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 ### 기타
 
 ## 🚨 트러블 슈팅
+
+### Neither BindingResult nor plain target object for bean name 'joinForm' available as request attribute
+
+#### 문제 상황
+
+##### 오류 메시지
+
+```
+Neither BindingResult nor plain target object for bean name 'joinForm' available as request attribute
+at org.apache.jsp.WEB_002dINF.views.auth.join_jsp._jspService(join_jsp.java:182)
+```
+
+##### 오류 발생 위치
+
+`join.jsp`
+
+```jsp
+12 <form:form action="${pageContext.request.contextPath}/auth/join.do" method="post" modelAttribute="joinForm">
+```
+
+#### 해결 방법
+
+스프링 프레임워크 form 태그 라이브러리의 `modelAttribute`는 폼에 있는 요소들의 값을 채우기 위한 객체를 지정해주는 속성 중 하나이다. 오류 메시지를 살펴 보면 joinForm이 존재하지 않는다고 헌다. `/auth/join.do`를 POST 방식으로 요청할 때는 오류 없이 잘 작동했는데 왜 그럴까? `@ModelAttribute`이 하는 역할을 한번 살펴보자.
+
+`@ModelAttribute` 애너테이션이 붙은 파라미터에는 다음과 같은 작업이 순서대로 진행된다.
+
+1. 파라미터로 넘겨 준 타입의 오브젝트를 자동으로 생성한다.
+2. 생성된 오브젝트에 HTTP로 넘어 온 값들을 자동으로 바인딩한다.
+3. 마지막으로 `@ModelAttribute` 어노테이션이 붙은 객체가 자동으로 `Model` 객체에 추가되고 `View`로 전달된다.
+
+마지막 작업에서 알 수 있듯이 `join()`에서 `joinForm`이 `Model` 객체에 추가되고 `View`로 전달됐기 때문에 오류 없이 잘 작동했던 것이다.
+
+따라서 아래와 같이 `model`에 `joinForm`에 대한 객체 정보를 저장하여 `View`f로 전달해야 한다. 처음 입력 폼 페이지를 조회할 때 입력 폼은 모두 비어져 있어야 하기 때문에 빈 객체(`new JoinForm()`)을 전달해야 한다.
+
+`JoinController.java`
+
+```java
+@Controller
+@RequiredArgsConstructor
+public class JoinController {
+	private final JoinService joinService;
+
+	@RequestMapping("/auth/joinPage.do")
+	public ModelAndView joinPage(@RequestParam HashMap<String, String> params) {
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("key", Calendar.getInstance().getTimeInMillis());
+		mv.addObject("joinForm", new JoinForm());
+		mv.setViewName("auth/join");
+		return mv;
+	}
+
+	@PostMapping("/auth/join.do")
+	public String join(@Validated @ModelAttribute JoinForm joinForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+	if (joinService.doesMemberIdExist(joinForm.getMemberId())) {
+		bindingResult.rejectValue("memberId", "exist", null, null);
+	}
+```
 
 ## 📝 메모
 
@@ -330,7 +395,7 @@ Fixes #42
 
 ##### `bean id="messageSource"`
 
-오류 메시지 파일의 위치를 인식할 수 있게 이 설정을 추가한다.
+오류 메시지 파일의 위치를 인식할 수 있게 이 설정을 추가한다. classpath로 지정된 곳에 `errors_ko.properties` 파일이 존재해야 한다.
 
 ##### `bean id="localeResolver"`
 
@@ -358,6 +423,7 @@ Fixes #42
 
 - `jakarta.validation-api`: Bean Validation 인터페이스
 - `hibernate-validator`: 구현체
+- `jakarta-el`: EL 기능을 제공하는 라이브러리. Hibernate Validator가 EL을 통해 동적인 유효성 검사를 수행할 수 있게 됩니다.
 
 #### `errors.properties`
 
@@ -429,7 +495,7 @@ Spring MVC에서 RedirectAttributes는 리다이렉트 시에 데이터를 전�
 - 데이터가 URL에 표시되지 않습니다.
 - 임시로 세션에 저장되며 다음 요청 후 자동으로 삭제됩니다.
 - 검증 결과나 성공/실패 메시지 등 임시 데이터에 적합합니다.
-- 보다 폐쇄적인 데이터 전달 방식입니다.
+- 폐쇄적인 데이터 전달 방식입니다.
 
 ### 이메일
 
@@ -545,7 +611,7 @@ email.password=ENC(...)
 
 ### `bean` 수동 등록 방법
 
-1. 필드 사용
+#### Setter 사용
 
 ```xml
 <bean id="joinDao" class="com.portfolio.www.dao.JoinDao">
@@ -556,7 +622,7 @@ email.password=ENC(...)
 - `name`: 주입 받을 `JoinDao`의 필드(멤버 변수) 이름
 - `ref`: `JoinDao`의 필드(멤버 변수) `dataSource`의 참조
 
-2. 생성자 사용
+#### 생성자 사용
 
 ```xml
 <bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
