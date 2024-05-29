@@ -6,7 +6,15 @@
 
 ### 회원 가입
 
-`join.jsp` - `<form>` ⮂ `JoinController.java` - `join()` ⮂ `JoinService.java` - `join()` ⮂ `MemberRepository.java` - `addMember()`, `EmailUtil.java` - `sendEmail()`
+#### Sequence Diagram
+
+##### 회원 가입
+
+![회원가입](회원가입-2024-05-29-140926.png)
+
+##### 이메일 인증
+
+![이메일인증](이메일인증-2024-05-29-142824.png)
 
 - 회원 가입 시 제약 사항
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능
