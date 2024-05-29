@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -44,6 +45,19 @@ public class JoinController {
 		}
 		
 		Message msg = joinService.join(joinForm);
+		redirectAttributes.addFlashAttribute("code", msg.getCode());
+		redirectAttributes.addFlashAttribute("desc", msg.getDescription());
+		
+		return "redirect:/auth/loginPage.do";
+	}
+	
+	@RequestMapping("/auth/emailAuth.do")
+	public String emailAuth(@RequestParam(defaultValue="") String uri, RedirectAttributes redirectAttributes) {
+		/*
+		 * if (uri.trim().isEmpty()) { return "redirect:/index.do"; }
+		 */
+		
+		Message msg = joinService.emailAuth(uri);
 		redirectAttributes.addFlashAttribute("code", msg.getCode());
 		redirectAttributes.addFlashAttribute("desc", msg.getDescription());
 		

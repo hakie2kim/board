@@ -43,14 +43,14 @@ public class EmailUtil {
 		return true;
 	}
 	
-	public EmailDto makeEmailDto(JoinForm joinForm, MemberAuthDto memberAuthDto) {
+	public EmailDto makeEmailDto(String receiverEmail, MemberAuthDto memberAuthDto) {
 		EmailDto emailDto = new EmailDto();
 		emailDto.setFrom(senderEmail);
-		emailDto.setReceiver(joinForm.getEmail());
+		emailDto.setReceiver(receiverEmail);
 		emailDto.setSubject("회원 가입 인증을 위한 메일 안내입니다.");
 		
 		// host + context root + uri
-		String html = String.format("<a href='http://localhost:8080/pf/emailAuth.do?uri=%s'>회원 가입 인증 하기</>",
+		String html = String.format("<a href='http://localhost:8080/pf/auth/emailAuth.do?uri=%s'>회원 가입 인증 하기</>",
 				memberAuthDto.getAuthUri()
 				);
 		emailDto.setText(html);

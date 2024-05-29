@@ -44,7 +44,7 @@ public class JoinService {
 		// 3. member_auth db 반영
 		MemberAuthDto memberAuthDto = makeMemberAuthDto(joinForm.getMemberSeq());
 		// 4. EmailDto 생성
-		EmailDto emailDto = emailUtil.makeEmailDto(joinForm, memberAuthDto);
+		EmailDto emailDto = emailUtil.makeEmailDto(joinForm.getEmail(), memberAuthDto);
 		// 5. 이메일 전송
 		return emailUtil.sendEmail(emailDto, true) ? Message.AUTH_EMAIL_SEND_SUCCESS : Message.AUTH_EMAIL_SEND_FAIL;
 	}
@@ -62,5 +62,22 @@ public class JoinService {
 		// 4. member_auth db 반영
 		memberAuthRepository.addMemberAuth(memberAuthDto);
 		return memberAuthDto;
+	}
+
+	public Message emailAuth(String uri) {
+		MemberAuthDto memberAuthDto = memberAuthRepository.findMemberAuth(uri);
+		
+		// uri로 찾은 MemberAuthDto가 없다면 유효하지 않은 링크
+		if (memberAuthDto == null) {
+			return Message.AUTH_EMAIL_NOT_VALID;
+		}
+		
+		// 현재 시간보다 인증 만료 시간이 작은 경우 
+		if (Calendar.getInstance().getTimeInMillis() < memberAuthDto.getExpireDtm()) {
+			memberAuthDto.setAuthYn("Y");
+			memberAuthRepository.updateEmailAuthYn(memberAuthDto);
+			return Message.AUTH_EMAIL_VALIDATED;
+		}
+		return Message.AUTH_EMAIL_EXPIRED;
 	}
 }
