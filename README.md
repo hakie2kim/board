@@ -1,8 +1,31 @@
-# 포트폴리오
+# 게시판
 
 ## 💬 소개
 
 ## 🔨 기능 요구사항
+
+### 회원 가입
+
+#### Sequence Diagram
+
+##### 회원 가입
+
+![회원가입](회원가입-2024-05-29-140926.png)
+
+##### 이메일 인증
+
+![이메일인증](이메일인증-2024-05-29-142824.png)
+
+- 회원 가입 시 제약 사항
+  - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능
+  - [x] 이미 존재하는 아이디로는 가입 불가
+  - [x] 비밀번호는 8~16자의 영문 대/소문자, 숫자를 사용, 특수문자를 1개 이상 포함
+  - [x] 이름은 공백 또는 빈 칸일 수 없음
+  - [x] 이메일은 공백 또는 빈 칸일 수 없고 이메일 형식을 준수
+- [x] 패스워드는 DB에 암호화 후 저장
+- 사용자 이메일 유효 여부 인증
+  - [x] 인증 링크를 포함한 이메일 전송
+  - [x] 사용자가 인증 링크를 클릭한 후 인증 여부를 DB에 반영
 
 ### 프로젝트 환경 설정
 
@@ -90,6 +113,14 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 </configuration>
 ```
 
+###### `<typeAliases>`
+
+MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는 `com.portfolio.www.dto` 패키지 내의 모든 클래스를 대상으로 `@Alias` 애너테이션이 없다면 클래스 이름을 소문자로 변환하여 별칭으로 등록합니다. 예를 들어, `com.portfolio.www.dto.Member` 클래스는 `member`라는 별칭으로 등록됩니다.
+
+###### `<typeAlias>`
+
+개별 클래스를 명시적으로 별칭과 매핑할 수 있습니다. 이 방법은 패키지 단위 설정 대신 특정 클래스에 대해 별칭을 설정할 때 사용됩니다. 주석 처리된 예제에서는 com.edu.dto.Employees 클래스를 Employees라는 별칭으로 설정합니다.
+
 #### Tiles
 
 ##### `pom.xml`
@@ -168,6 +199,97 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 ### 기타
 
 ## 🚨 트러블 슈팅
+
+### Neither BindingResult nor plain target object for bean name 'joinForm' available as request attribute
+
+#### 문제 상황
+
+`/auth/joinPage.do`를 요청
+
+##### 오류 메시지
+
+```
+Neither BindingResult nor plain target object for bean name 'joinForm' available as request attribute
+at org.apache.jsp.WEB_002dINF.views.auth.join_jsp._jspService(join_jsp.java:182)
+```
+
+##### 오류 발생 위치
+
+`join.jsp`
+
+```jsp
+12 <form:form action="${pageContext.request.contextPath}/auth/join.do" method="post" modelAttribute="joinForm">
+```
+
+#### 해결 방법
+
+스프링 프레임워크 form 태그 라이브러리의 `modelAttribute`는 폼에 있는 요소들의 값을 채우기 위한 객체를 지정해주는 속성 중 하나이다. 오류 메시지를 살펴 보면 joinForm이 존재하지 않는다고 헌다. `/auth/join.do`를 POST 방식으로 요청할 때는 오류 없이 잘 작동했는데 왜 그럴까? `@ModelAttribute`이 하는 역할을 한번 살펴보자.
+
+`@ModelAttribute` 애너테이션이 붙은 파라미터에는 다음과 같은 작업이 순서대로 진행된다.
+
+1. 파라미터로 넘겨 준 타입의 오브젝트를 자동으로 생성한다.
+2. 생성된 오브젝트에 HTTP로 넘어 온 값들을 자동으로 바인딩한다.
+3. 마지막으로 `@ModelAttribute` 어노테이션이 붙은 객체가 자동으로 `Model` 객체에 추가되고 `View`로 전달된다.
+
+마지막 작업에서 알 수 있듯이 `join()`에서 `joinForm`이 `Model` 객체에 추가되고 `View`로 전달됐기 때문에 오류 없이 잘 작동했던 것이다.
+
+따라서 아래와 같이 `model`에 `joinForm`에 대한 객체 정보를 저장하여 `View`f로 전달해야 한다. 처음 입력 폼 페이지를 조회할 때 입력 폼은 모두 비어져 있어야 하기 때문에 빈 객체(`new JoinForm()`)을 전달해야 한다.
+
+`JoinController.java`
+
+```java
+@Controller
+@RequiredArgsConstructor
+public class JoinController {
+	private final JoinService joinService;
+
+	@RequestMapping("/auth/joinPage.do")
+	public ModelAndView joinPage(@RequestParam HashMap<String, String> params) {
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("key", Calendar.getInstance().getTimeInMillis());
+		mv.addObject("joinForm", new JoinForm());
+		mv.setViewName("auth/join");
+		return mv;
+	}
+
+	@PostMapping("/auth/join.do")
+	public String join(@Validated @ModelAttribute JoinForm joinForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+	if (joinService.doesMemberIdExist(joinForm.getMemberId())) {
+		bindingResult.rejectValue("memberId", "exist", null, null);
+	}
+```
+
+### 잘못된 이메일 인증 링크로 접속
+
+#### 문제 상황
+
+`/auth/emailAuth.do`를 요청
+
+##### 오류 메시지
+
+```
+Required request parameter 'uri' for method parameter type String is not present
+```
+
+##### 오류 발생 위치
+
+`JoinController.java`
+
+```java
+54 @RequestMapping("/auth/emailAuth.do")
+55 public String emailAuth(@RequestParam String uri, RedirectAttributes redirectAttributes) {
+```
+
+#### 해결 방법
+
+위 문제 상황은 쿼리 파라미터의 `uri`의 값이 `null`이기 때문에 발생하는 것이다. 이를 방지하기 위해서 아래와 같이 `uri`의 값에 기본값 `""`을 할당했다.
+
+```java
+54 @RequestMapping("/auth/emailAuth.do")
+55 public String emailAuth(@RequestParam(defaultValue="") String uri, RedirectAttributes redirectAttributes) {
+```
+
+하지만 이와 같은 방식으로 처리하는 경우 `JoinService.java`의 메서드를 일부분 사용하게 되는 또 다른 문제를 낳는다. 이후 서블릿 예외 처리를 적용해 컨트롤러에서 이러한 요청 접근을 방지할 예정이다.
 
 ## 📝 메모
 
@@ -293,3 +415,304 @@ feat: add user login feature
 This commit adds the user login feature including authentication and session management.
 Fixes #42
 ```
+
+### Bean Validation
+
+#### `context-bean.xml`
+
+```xml
+<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+	<property name="defaultEncoding" value="UTF-8" />
+		<property name="basename" value="classpath:errors" />
+</bean>
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+	<property name="defaultLocale" value="ko" />
+</bean>
+```
+
+##### `bean id="validator"`
+
+`LocalValidatorFactoryBean` 을 글로벌 Validator로 등록한다. 이 Validator는 `@NotNull` 같은 애노테이션을 보고 검증을 수행한다. 이렇게 글로벌 Validator가 적용되어 있기 때문에, `@Valid` , `@Validated` 만 적용하면 된다. 검증 오류가 발생하면 `FieldError` , `ObjectError` 를 생성해서 `BindingResult` 에 담아준다.
+
+##### `bean id="messageSource"`
+
+오류 메시지 파일의 위치를 인식할 수 있게 이 설정을 추가한다. classpath로 지정된 곳에 `errors_ko.properties` 파일이 존재해야 한다.
+
+##### `bean id="localeResolver"`
+
+세션을 통해 사용자의 로케일 정보를 관리합니다.
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>javax.validation</groupId>
+	<artifactId>validation-api</artifactId>
+	<version>2.0.1.Final</version>
+</dependency>
+<dependency>
+	<groupId>org.hibernate.validator</groupId>
+	<artifactId>hibernate-validator</artifactId>
+	<version>6.2.5.Final</version>
+</dependency>
+<dependency>
+	<groupId>org.glassfish</groupId>
+	<artifactId>jakarta.el</artifactId>
+	<version>3.0.3</version>
+</dependency>
+```
+
+- `jakarta.validation-api`: Bean Validation 인터페이스
+- `hibernate-validator`: 구현체
+- `jakarta-el`: EL 기능을 제공하는 라이브러리. Hibernate Validator가 EL을 통해 동적인 유효성 검사를 수행할 수 있게 됩니다.
+
+#### `errors.properties`
+
+`NotBlank`라는 오류 코드를 통해 `MessageCodesResolver`가 어떤 메시지 코드를 순서대로 만드는지 알아보자. 처음이 구체적이고 마지막이 덜 구체적이다.
+
+```
+1. NotBlank.item.itemName
+2. NotBlank.itemName
+3. NotBlank.java.lang.String
+4. NotBlank
+```
+
+오류 코드는 구체적 ⭢ 덜 구체적인 것을 우선으로 만들어준다. 이때 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다. 설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `아이디는 공백일 수 없습니다` 를 출력한다.
+
+### BindingResult - `rejectValue()`
+
+`rejectValue()` 메서드는 Spring Framework의 BindingResult 인터페이스에서 제공하는 메서드로, 특정 필드에 대한 검증 오류를 등록하는 데 사용됩니다.
+
+#### 메서드 선언부
+
+```java
+void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage);
+```
+
+- `field`: 오류가 발생한 필드의 이름
+- `errorCode`: 오류 코드를 지정. 이 오류 코드는 메시지에 등록된 코드가 아니라 `MessageCodesResolver`를 위한 오류 코드입니다.
+- `defaultMessage`: 오류 메시지를 찾을 수 없을 때 사용하는 기본 메시지
+- `errorArgs`: 오류 메시지에서 사용할 추가 인수
+
+#### 사용 이유 - 축약된 오류 코드
+
+`rejectValue()` 메서드를 사용하면 오류 코드를 간단하게 입력할 수 있습니다. 예를 들어, `range.item.price` 대신 `range`로만 지정해도 오류 메시지를 잘 찾아서 출력합니다. 이러한 기능은 `MessageCodesResolver` 덕분입니다.
+
+#### 원리
+
+이러한 축약된 오류 코드를 사용할 수 있는 이유는
+
+```java
+bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
+```
+
+```properties
+range.item.price=가격은 {0} ~ {1} 까지 허용합니다.
+```
+
+위와 같이 `rejectValue()`를 통해 오류를 등록하고 `errors.properties`에 오류 메시지를 등록하면 `MessageCodesResolver`는 `range`라는 오류 코드를 다음과 같은 순서로 변환하여 메시지를 찾는다.
+
+1. `range.item.price`
+2. `range.price`
+3. `range.item`
+4. `range`
+
+설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `가격은 1000 ~ 1000000 까지 허용합니다.` 를 출력한다.
+
+### RedirectAttributes - `addAttributes()` vs. `addFlashAttributes()`
+
+Spring MVC에서 RedirectAttributes는 리다이렉트 시에 데이터를 전달하기 위해 사용됩니다. 이때 데이터를 넘기는 방법으로 두 가지 메서드 addAttribute()와 addFlashAttribute()는 서로 다른 방식으로 데이터를 처리하고 전달합니다.
+
+#### `addAttribute()`
+
+- URL에 쿼리 파라미터 형식으로 데이터를 추가합니다.
+- URL에 쿼리 파라미터로 추가되므로 짧은 정보와 노출되어도 상관없는 정보를 전달할 때 사용합니다.
+- 데이터를 브라우저의 주소창에 표시합니다.
+- 여러 요청에 걸쳐 접근이 가능합니다.
+
+#### `addFlashAttribute()`
+
+- 데이터를 세션에 임시로 저장하여 다음 요청에서만 접근 가능하게 합니다.
+- 데이터가 URL에 표시되지 않습니다.
+- 임시로 세션에 저장되며 다음 요청 후 자동으로 삭제됩니다.
+- 검증 결과나 성공/실패 메시지 등 임시 데이터에 적합합니다.
+- 폐쇄적인 데이터 전달 방식입니다.
+
+### 이메일
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>org.mybatis</groupId>
+	<artifactId>mybatis</artifactId>
+	<version>3.5.16</version>
+</dependency>
+<dependency>
+	<groupId>org.mybatis</groupId>
+	<artifactId>mybatis-spring</artifactId>
+	<version>2.1.2</version>
+</dependency>
+```
+
+#### `src/main/resources/context-beans.xml`
+
+```xml
+<bean id="javaMailSender"
+	class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	<property name="host" value="smtp.naver.com" />
+	<property name="port" value="587" />
+	<property name="username" value="${email.username}" />
+	<property name="password" value="${email.password}" />
+	<property name="javaMailProperties">
+		<props>
+			<prop key="mail.smtp.starttls.enable">true</prop>
+		</props>
+	</property>
+</bean>
+```
+
+이 설정을 통해 `JavaMailSenderImpl` 객체가 생성되고 이를 통해 이메일 전송을 위한 SMTP 서버와 연결할 수 있게 됩니다.
+
+- `host`: 이메일을 전송할 SMTP 서버의 호스트 주소
+- `port`: SMTP 서버의 포트 번호
+- `username`: SMTP 서버에 로그인할 사용자 이름
+- `password`: SMTP 서버에 로그인할 비밀번호
+- `javaMailProperties`: 추가적인 JavaMail 속성 설정을 위한 프로퍼티.
+- `mail.smtp.starttls.enable`: TLS(Transport Layer Security) 사용 설정. 여기서는 true로 설정하여 TLS를 사용합니다.
+
+```xml
+<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+	<constructor-arg name="javaMailSender" ref="javaMailSender" />
+	<constructor-arg name="senderEmail" value="${email.username}" />
+</bean>
+```
+
+이 설정을 통해 `EmailUtil` 객체가 생성되고 이를 통해 이메일 전송 기능을 사용할 수 있습니다. `EmailUtil` 클래스는 `JavaMailSender`를 사용하여 이메일을 전송하는 유틸리티 역할을 합니다.
+
+- `javaMailSender`: 이메일 전송에 사용할 JavaMailSender 객체를 주입
+- `senderEmail`: 이메일을 전송할 발신자의 이메일 주소
+
+### Jasypt를 이용한 이메일, 비밀번호 암호화
+
+#### `pom.xml`
+
+```xml
+<dependency>
+	<groupId>org.jasypt</groupId>
+	<artifactId>jasypt-spring31</artifactId>
+	<version>1.9.3</version>
+</dependency>
+```
+
+#### `src/main/resources/context-beans.xml`
+
+```xml
+<bean id="encryptorConfig" class="org.jasypt.encryption.pbe.config.EnvironmentPBEConfig">
+	<!-- 사용할 암호화 알고리즘 -->
+	<property name="algorithm" value="PBEWithMD5AndDES" />
+	<!-- PBE (패스워드 기반 암호화) 암호 설정 -->
+	<property name="password" value="password" />
+</bean>
+```
+
+이 설정을 통해 암호화 설정 정보를 담은 `EnvironmentPBEConfig` 객체가 생성됩니다.
+
+- `algorithm`: 사용할 암호화 알고리즘. PBEWithMD5AndDES는 MD5 해시와 DES 암호화 알고리즘을 사용하는 패스워드 기반 암호화(PBE) 알고리즘입니다.
+- `password`: 암호화에 사용할 패스워드. 이 패스워드는 암호화된 값을 복호화할 때에도 사용됩니다.
+
+```xml
+<bean id="encryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+	<property name="config" ref="encryptorConfig" />
+</bean>
+```
+
+이 설정을 통해 암호화 및 복호화를 수행할 `StandardPBEStringEncryptor` 객체가 생성됩니다. `StandardPBEStringEncryptor`는 앞서 설정한 암호화 알고리즘과 패스워드를 사용하여 문자열을 암호화 및 복호화합니다.
+
+- `config`: 암호화 설정을 참조
+
+```xml
+<bean class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+	<constructor-arg ref="encryptor" />
+	<property name="locations" value="classpath:email.properties" />
+</bean>
+```
+
+- `ref="encryptor"`: 암호화 및 복호화를 수행할 `StandardPBEStringEncryptor` 객체를 주입
+- `locations`: 암호화된 속성 값을 포함하는 프로퍼티 파일의 위치를 지정
+
+#### `src/main/resources/email.properties`
+
+```properties
+email.username=ENC(...)
+email.password=ENC(...)
+```
+
+`ENC(...)`로 표시된 부분은 암호화된 값이며 Spring 애플리케이션에서는 이를 자동으로 복호화하여 사용할 수 있습니다. 이 설정은 민감한 정보를 보호하면서도 애플리케이션이 쉽게 접근할 수 있도록 합니다.
+
+### `bean` 수동 등록 방법
+
+#### Setter 사용
+
+```xml
+<bean id="joinDao" class="com.portfolio.www.dao.JoinDao">
+  <property name="dataSource" ref="dataSource" />
+</bean>
+```
+
+- `name`: 주입 받을 `JoinDao`의 필드(멤버 변수) 이름
+- `ref`: `JoinDao`의 필드(멤버 변수) `dataSource`의 참조
+
+#### 생성자 사용
+
+```xml
+<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+	<constructor-arg name="javaMailSender" ref="javaMailSender" />
+	<constructor-arg name="senderEmail" value="${email.username}" />
+</bean>
+```
+
+- `value`: 생성자의 파라미터 이름 `senderEmail`의 인자로 올 값
+
+### PRG (Post/Redirect/Get)
+
+`JoinController.java`의 `join()`에서 리다이렉트를 하는 이유는 무엇일까? 만약 리다이렉트를을 하지 않았다고 해보자. 회원 가입을 한 페이지에서 새로 고침을 한 후 DB를 확인 해보면 회원이 또 추가됐다는 것을 알 수 있다. 새로고침을 할 때마다 기존 입력한 회원이 계속해서 추가되는 것이다. 왜 이런 현상이 발생하는 것일까?
+
+결론부터 말하자면 웹 브라우저의 새로 고침은 마지막에 서버에 전송한 데이터를 다시 전송하는 작업을 한다. 그렇기 때문에 `POST /auth/join.do` + `회원 가입 폼에서 입력한 회원 데이터` 이 작업이 계속해서 반복된다. 따라서 회원 내용은 같고 `member_seq`만 증가한 `Member`의 데이터가 계속 DB에 추가된다. 여기에서 왜 리다이렉트를 로그인 페이지(`/loginPage.do`)로 하는지 알 수 있다. 다시 로그인 페이지(`/loginPage.do`)로 이동하게 되면 아무리 새로고침을 해도 웹 브라우저는 그저 로그인 페이지(`/loginPage.do`)만을 보여주게 된다.
+
+위와 같은 방식을 `Post/Redirect/Get` 줄여서 `PRG`라 하며 Spring의 `redirect:이동할 주소`와 더불어 `RedirectAttributes` 기능을 사용하게 되면 폼 전송 후 자동으로 리다이렉트 하게 된다.
+
+### `MimeMessageHelper`의 `setText()`, `EmailUtil.java`의 `sendMail()` 메서드 오버로딩
+
+`EmailUtil.java`의 메서드 `sendMail()`을 보면 메서드가 오버로딩 되어있는 것을 볼 수 있다. 왜 그런 것일까?
+
+회원이 클릭할 수 있는 링크가 담긴 이메일을 받기 위해서는 이메일 본문을 `HTML` 태그 형식으로 보내야 한다. 그렇게 하기 위해서는 우선 `MimeMessageHelper`의 `setText`메서드를 살펴봐야 한다.
+
+```java
+public void setText(String text) throws MessagingException {
+  setText(text, false);
+}
+
+/**
+	 * Set the given text directly as content in non-multipart mode
+	 * or as default body part in multipart mode.
+	 * The "html" flag determines the content type to apply.
+	 * <p><b>NOTE:</b> Invoke {@link #addInline} <i>after</i> {@code setText};
+	 * else, mail readers might not be able to resolve inline references correctly.
+	 * @param text the text for the message
+	 * @param html whether to apply content type "text/html" for an
+	 * HTML mail, using default content type ("text/plain") else
+	 * @throws MessagingException in case of errors
+	 */
+public void setText(String text, boolean html) throws MessagingException {
+  // ...
+}
+```
+
+주석을 보면 `@param html`에 대한 설명이 있는데 요약하면 다음과 같다.
+
+- `content type "text/html"` ⭢ `html`의 값 `true`
+- `content type "text/plain"` ⭢ `html`의 값 `false`
+
+실제로도 매개 변수가 하나만 있는 `setText(String text)`를 사용하면 `"text/plain"` 형식으로 `html` 본문이 구성된다. 이때, `setText(String text)` 안에는 `setText(String text, boolean html)`가 있는 것을 확인할 수 있다. 이와 같이, 어떤 메서드의 파라미터를 기본값으로 지정(`"text/plain"`)해주고 싶을 때와 아닌 경우를 구별할 때 이러한 메서드 오버로딩 방식이 많이 사용된다.

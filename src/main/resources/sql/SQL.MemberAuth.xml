@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.portfolio.www.dao.mybatis.MemberAuthRepository">
+    <insert id="addMemberAuth">
+    	INSERT INTO forum.`member_auth` (member_seq, auth_uri, reg_dtm, expire_dtm)
+		VALUES(#{memberSeq}, #{authUri}, DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), #{expireDtm});
+    </insert>
+    <select id="findMemberAuth" resultType="memberAuthDto">
+    	SELECT * FROM forum.`member_auth`
+    	WHERE auth_uri = #{authUri}   	
+    </select>
+    <update id="updateEmailAuthYn">
+    	UPDATE forum.`member_auth`
+		SET auth_yn = #{authYn}
+		WHERE auth_uri = #{authUri};  	
+    </update>
+    <update id="updateMemberAuth">
+    	UPDATE forum.`member_auth`
+		SET auth_uri = #{authUri}, expire_dtm = #{expireDtm}
+		WHERE member_seq = #{memberSeq};  	
+    </update>    
+</mapper>

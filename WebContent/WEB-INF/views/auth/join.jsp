@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <!--================================
 	START SIGNUP AREA
 =================================-->
@@ -8,7 +9,7 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-6 offset-lg-3">
-                <form action="#">
+               <form:form action="${pageContext.request.contextPath}/auth/join.do" method="post" modelAttribute="joinForm">
                     <div class="cardify signup_form">
                         <div class="login--header">
                             <h3>Create Your Account</h3>
@@ -19,30 +20,33 @@
                         <!-- end .login_header -->
 
                         <div class="login--form">
-
                             <div class="form-group">
                                 <label for="urname">Your Name</label>
-                                <input id="urname" name="memberNm" type="text" class="text_field" placeholder="Enter your Name">
+                                <form:input path="memberNm" id="urname" name="memberNm" type="text" class="text_field" placeholder="Enter your Name" />
+                                <form:errors path="memberNm" cssClass="error" />
                             </div>
 
                             <div class="form-group">
                                 <label for="email_ad">Email Address</label>
-                                <input id="email_ad" name="email" type="text" class="text_field" placeholder="Enter your email address">
+                                <form:input path="email" id="email_ad" name="email" type="text" class="text_field" placeholder="Enter your email address" />
+                                <form:errors path="email" cssClass="error" />
                             </div>
 
                             <div class="form-group">
                                 <label for="user_name">Username</label>
-                                <input id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username...">
+                                <form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username..." />
+                                <form:errors path="memberId" cssClass="error" />
                             </div>
 
                             <div class="form-group">
                                 <label for="password">Password</label>
-                                <input id="password" name="passwd" type="text" class="text_field" placeholder="Enter your password...">
+                                <form:input path="passwd" id="password" name="passwd" type="password" class="text_field" placeholder="Enter your password..." />
+                                <form:errors path="passwd" cssClass="error" />
                             </div>
 
                             <div class="form-group">
                                 <label for="con_pass">Confirm Password</label>
-                                <input id="con_pass" type="text" class="text_field" placeholder="Confirm password">
+                                <input type="password" id="con_pass" type="text" class="text_field" placeholder="Confirm password">
                             </div>
 
                             <button class="btn btn--md btn--round register_btn" type="submit">Register Now</button>
@@ -56,7 +60,7 @@
                         <!-- end .login--form -->
                     </div>
                     <!-- end .cardify -->
-                </form>
+                </form:form>
             </div>
             <!-- end .col-md-6 -->
         </div>

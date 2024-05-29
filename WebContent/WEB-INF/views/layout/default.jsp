@@ -40,7 +40,7 @@
     <tiles:insertAttribute name="body" />
     <tiles:insertAttribute name="footer" />
     
-    <!--//////////////////// JS GOES HERE ////////////////-->
+    <!--//////////////////// JS GOES HERE ////////////////////-->
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0C5etf1GVmL_ldVAichWwFFVcDfa1y_c"></script>
     <!-- inject:js -->
