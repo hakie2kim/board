@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <script>
 	window.onload = function() {
 		const code = ${code};
@@ -18,7 +20,14 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-6 offset-lg-3">
-                <form action="#">
+                <form:form action="${pageContext.request.contextPath}/auth/login.do" method="post" modelAttribute="loginForm">
+					<spring:hasBindErrors name="loginForm">
+			            <c:forEach items="${errors.globalErrors}" var="err">
+			                <div class="error">
+		                        <c:out value="${err.defaultMessage}" />
+			                </div>
+			            </c:forEach>
+				    </spring:hasBindErrors>
                     <div class="cardify login">
                         <div class="login--header">
                             <h3>Welcome Back</h3>
@@ -29,12 +38,14 @@
                         <div class="login--form">
                             <div class="form-group">
                                 <label for="user_name">Username</label>
-                                <input id="user_name" type="text" class="text_field" placeholder="Enter your username...">
+                                <form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username..." />
+                                <form:errors path="memberId" cssClass="error" />
                             </div>
 
                             <div class="form-group">
                                 <label for="pass">Password</label>
-                                <input id="pass" type="text" class="text_field" placeholder="Enter your password...">
+                                <form:input path="passwd" id="pass" name="passwd" type="password" class="text_field" placeholder="Enter your password..." />
+                            	<form:errors path="passwd" cssClass="error" />
                             </div>
 
                             <div class="form-group">
@@ -60,7 +71,7 @@
                         <!-- end .login--form -->
                     </div>
                     <!-- end .cardify -->
-                </form>
+                </form:form>
             </div>
             <!-- end .col-md-6 -->
         </div>

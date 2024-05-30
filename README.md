@@ -1,4 +1,4 @@
-# 게시판
+# 포트폴리오
 
 ## 💬 소개
 
@@ -10,11 +10,11 @@
 
 ##### 회원 가입
 
-![회원가입](회원가입-2024-05-29-140926.png)
+![회원가입-2024-05-29-140926](https://github.com/hakie2kim/board/assets/115719016/273fd06c-2f90-4f35-87fc-dae4f3bb301c)
 
 ##### 이메일 인증
 
-![이메일인증](이메일인증-2024-05-29-142824.png)
+![이메일인증-2024-05-29-142824](https://github.com/hakie2kim/board/assets/115719016/32b975f1-9840-496e-8d6f-484bea2cd6e1)
 
 - 회원 가입 시 제약 사항
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능
@@ -26,6 +26,16 @@
 - 사용자 이메일 유효 여부 인증
   - [x] 인증 링크를 포함한 이메일 전송
   - [x] 사용자가 인증 링크를 클릭한 후 인증 여부를 DB에 반영
+
+### 로그인, 로그아웃
+
+- [ ] 로그인
+- 다음 기능들은 로그인 후에만 가능하도록 제한
+  - [ ] 공지사항 작성 페이지 접근
+  - [ ] 공지사항 수정 페이지 접근
+  - [ ] 댓글 달기
+  - [ ] 좋아요/싫어요
+- [ ] 로그아웃
 
 ### 프로젝트 환경 설정
 
@@ -113,14 +123,6 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 </configuration>
 ```
 
-###### `<typeAliases>`
-
-MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는 `com.portfolio.www.dto` 패키지 내의 모든 클래스를 대상으로 `@Alias` 애너테이션이 없다면 클래스 이름을 소문자로 변환하여 별칭으로 등록합니다. 예를 들어, `com.portfolio.www.dto.Member` 클래스는 `member`라는 별칭으로 등록됩니다.
-
-###### `<typeAlias>`
-
-개별 클래스를 명시적으로 별칭과 매핑할 수 있습니다. 이 방법은 패키지 단위 설정 대신 특정 클래스에 대해 별칭을 설정할 때 사용됩니다. 주석 처리된 예제에서는 com.edu.dto.Employees 클래스를 Employees라는 별칭으로 설정합니다.
-
 #### Tiles
 
 ##### `pom.xml`
@@ -200,11 +202,52 @@ MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는
 
 ## 🚨 트러블 슈팅
 
+### Data truncation: Incorrect datetime value: '1713673255884' for column 'expire_dtm'
+
+#### 문제 상황
+
+시간을 대소비교 할 때는 숫자로 비교하는 것이 가장 편하기 때문에 기존 `member_auth`의 `expire_dtm`의 데이터 타입을 `INT`로 변경했더니 회원 가입을 할 떄 오류가 발생한다.
+
+##### 오류 메시지
+
+```
+Request processing failed; nested exception is org.springframework.dao.DataIntegrityViolationException: StatementCallback;
+SQL [INSERT INTO forum.member_auth (member_seq, auth_num, auth_uri, reg_dtm, expire_dtm, auth_yn) VALUES(56, '', 'e67ff01ee499423285426bbb44d05df5', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), 1713673255884, 'N');];
+Data truncation: Incorrect datetime value: '1713673255884' for column 'expire_dtm' at row 1;
+nested exception is com.mysql.cj.jdbc.exceptions.MysqlDataTruncation: Data truncation: Incorrect datetime value: '1713673255884' for column 'expire_dtm' at row 1
+```
+
+##### 오류 발생 부분
+
+`MemberAuthDao.java`
+
+```java
+public class MemberAuthDao extends JdbcTemplate {
+	private DataSource dataSource;
+
+	public int addMemberAuthInfo(MemberAuthDto dto) {
+		/*
+		 * String sql = String.format("INSERT INTO forum.member_auth " +
+		 * "(member_seq, auth_num, auth_uri, reg_dtm, expire_dtm, auth_yn) " +
+		 * "VALUES(%d, '', '%s', DATE_FORMAT(NOW(), '%%Y%%m%%d%%H%%i%%s'), %d, 'N'); ",
+		 * dto.getMemberSeq(), dto.getAuthUri(), dto.getExpireDtm());
+		 */
+		String sql = "INSERT INTO forum.member_auth (member_seq, auth_num, auth_uri, reg_dtm, expire_dtm, auth_yn) "
+				+ "VALUES(?, '', ?, DATE_FORMAT(NOW(), '%%Y%%m%%d%%H%%i%%s'), ?, 'N'); ";
+		Object[] args = {dto.getMemberSeq(), dto.getAuthUri(), dto.getExpireDtm()};
+		return update(sql, args);
+	}
+```
+
+#### 해결 방법
+
+Data truncation이라는 단어에서 알 수 있듯이 `1713673255884`을 `DATETIME` 타입으로 변경하려다 값의 범위를 넘어 데이터 일부가 소실된다는 에러이다. `member_auth`의 `expire_dtm`의 데이터 타입을 더 큰 값의 범위를 담을 수 있는 `BIGINT`로 변경했다.
+
 ### Neither BindingResult nor plain target object for bean name 'joinForm' available as request attribute
 
 #### 문제 상황
 
-`/auth/joinPage.do`를 요청
+`/auth/joinPage.do`를 요청했을 때 오류가 발생한다.
 
 ##### 오류 메시지
 
@@ -213,7 +256,7 @@ Neither BindingResult nor plain target object for bean name 'joinForm' available
 at org.apache.jsp.WEB_002dINF.views.auth.join_jsp._jspService(join_jsp.java:182)
 ```
 
-##### 오류 발생 위치
+##### 오류 발생 부분
 
 `join.jsp`
 
@@ -263,7 +306,7 @@ public class JoinController {
 
 #### 문제 상황
 
-`/auth/emailAuth.do`를 요청
+`/auth/emailAuth.do`를 요청했을 때 오류가 발생한다.
 
 ##### 오류 메시지
 
@@ -271,7 +314,7 @@ public class JoinController {
 Required request parameter 'uri' for method parameter type String is not present
 ```
 
-##### 오류 발생 위치
+##### 오류 발생 부분
 
 `JoinController.java`
 
@@ -290,6 +333,181 @@ Required request parameter 'uri' for method parameter type String is not present
 ```
 
 하지만 이와 같은 방식으로 처리하는 경우 `JoinService.java`의 메서드를 일부분 사용하게 되는 또 다른 문제를 낳는다. 이후 서블릿 예외 처리를 적용해 컨트롤러에서 이러한 요청 접근을 방지할 예정이다.
+
+### 로그인 폼 제약 메시지와 로그인 실패 메시지가 동시에 보임
+
+#### 문제 상황
+
+로그인 페이지에서 아이디 또는 패스워드만 입력했을 때 각각의 필드에 `공백일 수 없습니다` 메시지와 로그인 실패 메시지인 `아이디 또는 비밀번호가 맞지 않습니다.`가 동시에 보인다.
+
+##### 오류 메시지
+
+없음.
+
+##### 오류 발생 부분
+
+`LoginController.java`
+
+```java
+@Controller
+@RequiredArgsConstructor
+public class LoginController {
+	private final LoginService loginService;
+
+	@PostMapping("/auth/login.do")
+	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req, Model model) {
+		// 로그인 폼 입력을 바탕으로 회원 찾기
+		MemberDto memberDto = loginService.login(loginForm);
+
+		// 로그인 실패 -> ObjectError 추가
+		if (memberDto == null) {
+			bindingResult.reject("loginFail", Message.ID_OR_PWD_IS_WRONG.getDescription());
+		}
+
+		// 로그인 폼 입력이 잘못된 경우
+		if (bindingResult.hasErrors()) {
+			return "auth/login";
+		}
+```
+
+#### 해결 방법
+
+```java
+@Controller
+@RequiredArgsConstructor
+public class LoginController {
+	private final LoginService loginService;
+
+	@PostMapping("/auth/login.do")
+	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req, Model model) {
+		// 로그인 폼 입력이 잘못된 경우
+		if (bindingResult.hasErrors()) {
+			return "auth/login";
+		}
+
+		// 로그인 폼 입력을 바탕으로 회원 찾기
+		MemberDto memberDto = loginService.login(loginForm);
+
+		// 로그인 실패 -> ObjectError 추가, 로그인 페이지를 다시 보여줌
+		if (memberDto == null) {
+			bindingResult.reject("loginFail", Message.ID_OR_PWD_IS_WRONG.getDescription());
+			return "auth/login";
+		}
+```
+
+애초에 로그인 폼의 입력이 잘못된 경우 그 이후 단계가 진행되지 못하도록 `bindingResult`에 에러가 있는 경우 로그인 페이지를 다시 보여주는 부분의 위치를 변경해준다. 로그인 실패 시에 로그인 페이지를 다시 보여주는 부분도 추가한다.
+
+### 회원 가입하지 않은 아이디로 로그인 시도
+
+#### 문제 상황
+
+회원가입하지 않은 아이디로 로그인을 시도했을 때 다음과 같은 예외가 발생한다.
+
+##### 오류 메시지
+
+```
+org.springframework.dao.EmptyResultDataAccessException: Incorrect result size: expected 1, actual 0
+com.portfolio.www.dao.MemberDao.findMemberByUsername(MemberDao.java:37)
+```
+
+##### 오류 발생 부분
+
+`MemberController.java`
+
+```java
+@RequestMapping("/login.do")
+public String login(@ModelAttribute LoginForm form, HttpServletRequest request, Model model) {
+  String msg = "";
+
+	MemberDto memberDto = memberService.login(form);
+
+	if (!ObjectUtils.isEmpty(memberDto)) {
+		// 세션 처리
+		HttpSession session = request.getSession(false);
+		session.setAttribute("memberId", memberDto.getMemberId());
+		msg = "로그인에 성공했습니다.";
+		return "redirect:/main-page.do";
+
+	} else {
+		msg = "로그인에 실패했습니다.";
+	}
+
+  model.addAttribute("msg", msg);
+
+  return "login";
+}
+```
+
+#### 해결 방법
+
+```java
+@RequestMapping("/login.do")
+public String login(@ModelAttribute LoginForm form, HttpServletRequest request, Model model) {
+  String msg = "";
+
+  try {
+    MemberDto memberDto = memberService.login(form);
+
+    if (!ObjectUtils.isEmpty(memberDto)) {
+      // 세션 처리
+      HttpSession session = request.getSession(false);
+      session.setAttribute("memberId", memberDto.getMemberId());
+      msg = "로그인에 성공했습니다.";
+      return "redirect:/main-page.do";
+
+    } else {
+      msg = "로그인에 실패했습니다.";
+    }
+  } catch (EmptyResultDataAccessException e) {
+    msg = "존재하지 않는 아이디입니다.";
+  }
+
+  model.addAttribute("msg", msg);
+
+  return "login";
+}
+```
+
+에러에 대한 설명을 공식 문서에서 살펴 보니 다음과 같다.
+
+```
+Data access exception thrown when a result was expected to have at least one row (or element) but zero rows (or elements) were actually returned.
+```
+
+해당 예외는 사용자의 입력값으로 인해 발생했기 때문에 사용자에게 알려주어야 한다. 예외가 발생하면 다음과 같은 방향 `MemberDao` → `MemberService` → `MemberController`으로 예외가 전파된다. 마지막 컨트롤러에서 예외를 `catch`해 뷰에 전달할 메시지를 설정했다.
+참고로 `JdbcTemplate`을 사용했을 때 발생했던 문제이며 `MyBatis`를 사용할 경우 쿼리 조회 후 해당 값이 없는 경우 `null`을 반환한다.
+
+```java
+@RequestMapping("/login.do")
+public String login(@ModelAttribute LoginForm form, HttpServletRequest request, Model model) {
+  String msg = "";
+
+  try {
+    MemberDto memberDto = memberService.login(form);
+
+    if (!ObjectUtils.isEmpty(memberDto)) {
+      // 세션 처리
+      HttpSession session = request.getSession(false);
+      session.setAttribute("memberId", memberDto.getMemberId());
+      msg = "로그인에 성공했습니다.";
+      return "redirect:/main-page.do";
+
+    } else {
+      msg = "로그인에 실패했습니다.";
+    }
+  } catch (EmptyResultDataAccessException e) {
+    msg = "존재하지 않는 아이디입니다.";
+  }
+
+  model.addAttribute("msg", msg);
+
+  return "login";
+}
+```
+
+=======
+
+> > > > > > > parent of b53f068 (Merge pull request #3 from hakie2kim/feature/1-회원-가입)
 
 ## 📝 메모
 
@@ -416,6 +634,8 @@ This commit adds the user login feature including authentication and session man
 Fixes #42
 ```
 
+<<<<<<< HEAD
+
 ### Bean Validation
 
 #### `context-bean.xml`
@@ -480,11 +700,15 @@ Fixes #42
 
 오류 코드는 구체적 ⭢ 덜 구체적인 것을 우선으로 만들어준다. 이때 크게 중요하지 않은 메시지 같은 경우에는 기본 메시지를 사용하도록 한다. 설정된 메시지 파일에서 첫번재로 찾은 오류 코드에 맵핑된 오류 메시지 `아이디는 공백일 수 없습니다` 를 출력한다.
 
-### BindingResult - `rejectValue()`
+### BindingResult - `reject()`, `rejectValue()`
 
-`rejectValue()` 메서드는 Spring Framework의 BindingResult 인터페이스에서 제공하는 메서드로, 특정 필드에 대한 검증 오류를 등록하는 데 사용됩니다.
+Spring Framework의 BindingResult 인터페이스에서 제공하는 메서드 `reject()`, `rejectValue()`를 통해 `ObjectError`, `FieldError`를 직접 생성하지 않고 검증 오류를 다룰 수 있다.
 
 #### 메서드 선언부
+
+```java
+void reject(String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage);
+```
 
 ```java
 void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage);
@@ -497,11 +721,9 @@ void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] er
 
 #### 사용 이유 - 축약된 오류 코드
 
-`rejectValue()` 메서드를 사용하면 오류 코드를 간단하게 입력할 수 있습니다. 예를 들어, `range.item.price` 대신 `range`로만 지정해도 오류 메시지를 잘 찾아서 출력합니다. 이러한 기능은 `MessageCodesResolver` 덕분입니다.
+`rejectValue()` 메서드를 사용하면 오류 코드를 간단하게 입력할 수 있다. 예를 들어, `range.item.price` 대신 `range`로만 지정해도 오류 메시지를 잘 찾아서 출력한다. 이러한 기능은 `MessageCodesResolver` 가 필드와 오류 코드를 바탕으로 다음과 같은 메시지 코드들을 만들어 내기 때문이다.
 
-#### 원리
-
-이러한 축약된 오류 코드를 사용할 수 있는 이유는
+#### `MessageCodesResolver`의 작동 원리
 
 ```java
 bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
@@ -513,7 +735,7 @@ range.item.price=가격은 {0} ~ {1} 까지 허용합니다.
 
 위와 같이 `rejectValue()`를 통해 오류를 등록하고 `errors.properties`에 오류 메시지를 등록하면 `MessageCodesResolver`는 `range`라는 오류 코드를 다음과 같은 순서로 변환하여 메시지를 찾는다.
 
-1. `range.item.price`
+1. `range.item.price=가격은 {0} ~ {1} 까지 허용합니다.`
 2. `range.price`
 3. `range.item`
 4. `range`
@@ -716,3 +938,71 @@ public void setText(String text, boolean html) throws MessagingException {
 - `content type "text/plain"` ⭢ `html`의 값 `false`
 
 실제로도 매개 변수가 하나만 있는 `setText(String text)`를 사용하면 `"text/plain"` 형식으로 `html` 본문이 구성된다. 이때, `setText(String text)` 안에는 `setText(String text, boolean html)`가 있는 것을 확인할 수 있다. 이와 같이, 어떤 메서드의 파라미터를 기본값으로 지정(`"text/plain"`)해주고 싶을 때와 아닌 경우를 구별할 때 이러한 메서드 오버로딩 방식이 많이 사용된다.
+
+### 쿠키 대신 세션을 사용해서 로그인 후 사용자의 정보를 저장해야 하는 이유
+
+웹 애플리케이션에서 사용자 인증과 상태 유지를 위해 쿠키와 세션을 사용한다. 보안과 관리 측면에서 세션이 더 안전한 이유는 다음과 같다.
+
+#### 1. 쿠키 값 변조 문제
+
+- **문제점**: 사용자가 쿠키 값을 임의로 변경할 수 있다.
+  - **예시**: `Cookie: memberId=1`을 `Cookie: memberId=2`로 변경하면 다른 사용자의 정보에 접근할 수 있다.
+- **해결책**: 세션을 사용하면 클라이언트에 중요한 정보를 직접 저장하지 않고, 추정 불가능한 세션 ID만 쿠키에 저장하여 전달한다.
+
+#### 2. 쿠키 정보 탈취 문제
+
+- **문제점**: 쿠키에 저장된 정보는 쉽게 탈취될 수 있다.
+  - **예시**: 개인정보나 신용카드 정보가 쿠키에 저장되면 로컬 PC나 네트워크 전송 구간에서 탈취될 수 있다.
+- **해결책**: 세션을 사용하면 중요한 정보는 서버에 저장되고, 클라이언트에는 추정 불가능한 세션 ID만 전달된다. 따라서 해커가 세션 ID를 탈취해도 중요한 정보를 쉽게 얻을 수 없습니다.
+
+#### 3. 세션을 사용한 보안 강화
+
+- **임의의 토큰 사용**: 예측 불가능한 임의의 세션 ID을 생성 후 서버에서 세션 ID과 사용자 ID를 매핑하여 관리한다.
+- **세션 ID 만료 시간 설정**: 세션 ID의 만료 시간을 짧게 유지(예: 30분)하거나 해킹이 의심될 경우 강제로 제거할 수 있다.
+
+### 세션 동작 방식
+
+1. **로그인**
+
+   - 사용자가 `id`와 `password`를 전달하면 서버에서 사용자 인증을 수행한다.
+
+2. **세션 생성**
+
+   - 추정 불가능한 세션 ID(예: UUID)를 생성하고, 세션 저장소에 사용자 정보를 저장한다.
+   - 예시: `Cookie: mySessionId=zz0101xx-bab9-4b92-9b32-dadb280f4b61`
+
+3. **세션 ID를 응답 쿠키로 전달**
+
+   - 서버는 클라이언트에 `mySessionId` 쿠키를 전달한다.
+   - 클라이언트는 이 쿠키를 저장하고, 이후 요청 시 항상 이 쿠키를 서버에 전달한다.
+
+4. **세션 정보 조회**
+   - 서버는 클라이언트가 전달한 `mySessionId` 쿠키를 기반으로 세션 저장소를 조회하여 사용자 정보를 확인한다.
+
+### 쿠키와 비교한 세션의 장점
+
+- **변조 방지**: 세션 ID는 예측 불가능한 복잡한 값으로 설정된다.
+- **정보 보호**: 쿠키에 중요한 정보를 저장하지 않으므로 쿠키가 탈취되더라도 중요한 정보는 보호된다.
+- **세션 ID 만료 관리**: 해커가 세션 ID을 탈취해도 시간이 지나면 사용할 수 없도록 만료 시간을 짧게 설정할 수 있다.
+
+### `HttpSession`의 `getSession()`
+
+#### 메서드 선언부
+
+`public HttpSession getSession(boolean create);`
+
+#### `request.getSession(true)`
+
+- 세션이 있으면 기존 세션을 반환
+- 세션이 없으면 새로운 세션을 생성해서 반환
+
+#### `request.getSession(false)`
+
+- 세션이 있으면 기존 세션을 반환
+- 세션이 없으면 새로운 세션을 생성하지 않고 `null` 을 반환
+
+### 스프링 예외 추상화
+
+스프링은 데이터 접근 계층에서 발생하는 수많은 예외들을 추상화해 DB 기술에 종속적이지 않은 예외 계층을 제공하고 있다. 사실 `JdbcTemplate`을 사용하면 각 리포지토리 메서드에서 발생하는 여러 반복 작업을 대신해준다. 그 반복 작업에는 **예외 발생시 스프링 예외 변환기 실행** 또한 포함되어 있다.
+
+존재하지 않는 아이디로 로그인 시도를 할 때 발생하는 예외 `EmptyResultDataAccessException`는 `NonTransientDataAccessException`을 상속 받는 `RuntimeException` 언체크드 예외 중 하나이다. `NonTransientDataAccessException`는 같은 SQL을 반복해서 실행하면 실패하는 예외이다. (`EmptyResultDataAccessException` → `NonTransientDataAccessException` → `DataAccessException` → `RuntimeException`)
