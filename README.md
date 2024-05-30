@@ -123,6 +123,14 @@ docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/c
 </configuration>
 ```
 
+###### `<typeAliases>`
+
+MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는 `com.portfolio.www.dto` 패키지 내의 모든 클래스를 대상으로 `@Alias` 애너테이션이 없다면 클래스 이름을 소문자로 변환하여 별칭으로 등록합니다. 예를 들어, `com.portfolio.www.dto.Member` 클래스는 `member`라는 별칭으로 등록됩니다.
+
+###### `<typeAlias>`
+
+개별 클래스를 명시적으로 별칭과 매핑할 수 있습니다. 이 방법은 패키지 단위 설정 대신 특정 클래스에 대해 별칭을 설정할 때 사용됩니다. 주석 처리된 예제에서는 com.edu.dto.Employees 클래스를 Employees라는 별칭으로 설정합니다.
+
 #### Tiles
 
 ##### `pom.xml`
@@ -505,10 +513,6 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
 }
 ```
 
-=======
-
-> > > > > > > parent of b53f068 (Merge pull request #3 from hakie2kim/feature/1-회원-가입)
-
 ## 📝 메모
 
 ### Github SSH Key
@@ -633,8 +637,6 @@ feat: add user login feature
 This commit adds the user login feature including authentication and session management.
 Fixes #42
 ```
-
-<<<<<<< HEAD
 
 ### Bean Validation
 
