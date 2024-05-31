@@ -29,13 +29,15 @@
 
 ### 로그인, 로그아웃
 
-- [ ] 로그인
+- [x] 로그인
 - 다음 기능들은 로그인 후에만 가능하도록 제한
   - [ ] 공지사항 작성 페이지 접근
   - [ ] 공지사항 수정 페이지 접근
   - [ ] 댓글 달기
   - [ ] 좋아요/싫어요
-- [ ] 로그아웃
+- [ ] 이메일 유효 여부 인증이 완료된 사용자만 로그인 가능
+- [x] 로그인 페이지의 `Remeber Me` 체크 시 일주일 동안 아이디 기억
+- [x] 로그아웃
 
 ### 프로젝트 환경 설정
 
@@ -519,21 +521,21 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
 
 #### Github SSH Key를 비밀번호 입력 대신 사용해야 하는 이유
 
-- **보안 강화**: SSH 키는 비밀번호보다 보안이 뛰어나며 브루트 포스 공격에 덜 취약합니다.
-- **편리성**: 비밀번호를 반복해서 입력할 필요가 없어서 더 빠르고 편리하게 리포지토리에 접근할 수 있습니다.
-- **자동화**: CI/CD 파이프라인 등 자동화된 시스템에서 인증을 쉽게 관리할 수 있습니다.
-- **권한 관리**: 각 SSH 키는 특정 권한을 부여할 수 있어 세분화된 접근 제어가 가능합니다.
+- 보안 강화: SSH 키는 비밀번호보다 보안이 뛰어나며 브루트 포스 공격에 덜 취약합니다.
+- 편리성: 비밀번호를 반복해서 입력할 필요가 없어서 더 빠르고 편리하게 리포지토리에 접근할 수 있습니다.
+- 자동화: CI/CD 파이프라인 등 자동화된 시스템에서 인증을 쉽게 관리할 수 있습니다.
+- 권한 관리: 각 SSH 키는 특정 권한을 부여할 수 있어 세분화된 접근 제어가 가능합니다.
 
 #### Github SSH Key란 무엇인가?
 
-- **SSH (Secure Shell) Key**: 원격 서버와 안전하게 통신하기 위한 암호화 키 페어입니다.
-  - **Public Key**: 공개 키로, Github 계정에 등록됩니다.
-  - **Private Key**: 개인 키로, 사용자 컴퓨터에 안전하게 보관됩니다.
-- **역할**: Github와 같은 서비스와의 통신 시 암호화된 인증을 제공합니다.
+- SSH (Secure Shell) Key: 원격 서버와 안전하게 통신하기 위한 암호화 키 페어입니다.
+  - Public Key: 공개 키로, Github 계정에 등록됩니다.
+  - Private Key: 개인 키로, 사용자 컴퓨터에 안전하게 보관됩니다.
+- 역할: Github와 같은 서비스와의 통신 시 암호화된 인증을 제공합니다.
 
 #### Github SSH Key를 생성하는 방법
 
-1. **SSH Key 생성**
+1. SSH Key 생성
 
    ```bash
    ssh-keygen -t ed25519 -C "your_email@example.com"
@@ -542,7 +544,7 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
    - `-t ed25519`: 생성할 키의 타입을 지정합니다. `rsa` 대신 `ed25519`를 사용하는 것이 권장됩니다.
    - `-C "your_email@example.com"`: 키를 식별할 주석을 추가합니다.
 
-2. **생성된 SSH Key 확인**
+2. 생성된 SSH Key 확인
 
    ```bash
    ls ~/.ssh/id_ed25519*
@@ -551,20 +553,20 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
    - `id_ed25519`: Private key
    - `id_ed25519.pub`: Public key
 
-3. **Github에 공개 키 추가**
+3. Github에 공개 키 추가
 
    - 공개 키 파일(`~/.ssh/id_ed25519.pub`)의 내용을 복사합니다.
    - Github 웹사이트에 로그인 후, `Settings` ⭢ `SSH and GPG keys`로 이동합니다.
    - `New SSH key` 버튼을 클릭하고, 제목과 키 내용을 입력 후 `Add SSH key` 버튼을 클릭합니다.
 
-4. **SSH Agent에 키 추가**
+4. SSH Agent에 키 추가
 
    ```bash
    eval "$(ssh-agent -s)"
    ssh-add ~/.ssh/id_ed25519
    ```
 
-5. **Github과의 연결 테스트**
+5. Github과의 연결 테스트
 
    ```bash
    ssh -T git@github.com
@@ -576,37 +578,37 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
 
 #### Feature Branch
 
-- **목적**: 새로운 기능을 개발하기 위한 브랜치입니다.
-- **네이밍**: `feature/기능명` 형식으로 브랜치를 생성합니다.
-- **생성 시점**: 기능 개발이 시작될 때마다 생성하며, develop 브랜치에서 분기됩니다.
-- **특징**: 개발 작업이 완료되면 develop 브랜치로 병합됩니다.
+- 목적: 새로운 기능을 개발하기 위한 브랜치입니다.
+- 네이밍: `feature/기능명` 형식으로 브랜치를 생성합니다.
+- 생성 시점: 기능 개발이 시작될 때마다 생성하며, develop 브랜치에서 분기됩니다.
+- 특징: 개발 작업이 완료되면 develop 브랜치로 병합됩니다.
 
 #### Hotfix Branch
 
-- **목적**: 프로덕션 환경에서 발생한 긴급한 버그를 수정하기 위한 브랜치입니다.
-- **네이밍**: `hotfix/버그명` 형식으로 브랜치를 생성합니다.
-- **생성 시점**: 긴급한 버그 발견 시 main 브랜치에서 분기됩니다.
-- **특징**: 수정이 완료되면 main과 develop 브랜치로 병합됩니다.
+- 목적: 프로덕션 환경에서 발생한 긴급한 버그를 수정하기 위한 브랜치입니다.
+- 네이밍: `hotfix/버그명` 형식으로 브랜치를 생성합니다.
+- 생성 시점: 긴급한 버그 발견 시 main 브랜치에서 분기됩니다.
+- 특징: 수정이 완료되면 main과 develop 브랜치로 병합됩니다.
 
 #### Bugfix Branch
 
-- **목적**: 개발 중 또는 QA 과정에서 발견된 일반적인 버그를 수정하기 위한 브랜치입니다.
-- **네이밍**: `bugfix/버그명` 형식으로 브랜치를 생성합니다.
-- **생성 시점**: 버그 발견 시 develop 브랜치에서 분기됩니다.
-- **특징**: 수정이 완료되면 develop 브랜치로 병합됩니다.
+- 목적: 개발 중 또는 QA 과정에서 발견된 일반적인 버그를 수정하기 위한 브랜치입니다.
+- 네이밍: `bugfix/버그명` 형식으로 브랜치를 생성합니다.
+- 생성 시점: 버그 발견 시 develop 브랜치에서 분기됩니다.
+- 특징: 수정이 완료되면 develop 브랜치로 병합됩니다.
 
 #### Develop Branch
 
-- **목적**: 개발 중인 기능들이 통합되는 메인 개발 브랜치입니다.
-- **생성 시점**: 초기 프로젝트 설정 후 생성되며 feature 브랜치에서의 작업들이 병합됩니다.
-- **특징**: 개발 중인 기능을 통합하고 QA 및 테스트를 진행합니다.
+- 목적: 개발 중인 기능들이 통합되는 메인 개발 브랜치입니다.
+- 생성 시점: 초기 프로젝트 설정 후 생성되며 feature 브랜치에서의 작업들이 병합됩니다.
+- 특징: 개발 중인 기능을 통합하고 QA 및 테스트를 진행합니다.
 
 #### Main Branch
 
-- **목적**: 프로덕션에 배포되는 안정된 소스 코드가 저장되는 메인 브랜치입니다.
-- **생성 시점**: 초기 프로젝트 설정 후 생성되며 main 브랜치에는 배포 가능한 안정된 코드만이 반영됩니다.
-- **특징**: 모든 기능이 통합되고 검증된 후 main 브랜치로 배포 준비가 완료됩니다.
-- **주의**: 배포 후에는 main 브랜치에서만 분기될 수 있습니다.
+- 목적: 프로덕션에 배포되는 안정된 소스 코드가 저장되는 메인 브랜치입니다.
+- 생성 시점: 초기 프로젝트 설정 후 생성되며 main 브랜치에는 배포 가능한 안정된 코드만이 반영됩니다.
+- 특징: 모든 기능이 통합되고 검증된 후 main 브랜치로 배포 준비가 완료됩니다.
+- 주의: 배포 후에는 main 브랜치에서만 분기될 수 있습니다.
 
 ### Conventional Commits
 
@@ -618,7 +620,7 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
 [optional footer]
 ```
 
-- **`<type>`**: 커밋의 종류를 나타냅니다.
+- `<type>`: 커밋의 종류를 나타냅니다.
   - feat: 새로운 기능 추가
   - fix: 버그 수정
   - docs: 문서 변경 (예: README.md 수정)
@@ -626,9 +628,9 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
   - refactor: 코드 리팩토링 (기능 변경 없이 코드 구조 변경)
   - test: 테스트 코드 추가, 변경
   - chore: 빌드 프로세스, 도구 설정 변경 등 그 외의 변경
-- **`<description>`**: 커밋의 간단한 설명입니다. 어떤 변경이 이루어졌는지 명확하게 작성합니다.
-- **`[optional body]`**: 변경의 상세한 설명을 추가할 수 있는 부분입니다. 변경 내용이나 이유 등을 자세히 설명할 때 사용합니다.
-- **`[optional footer]`**: 커밋에 관련된 이슈 번호 등 추가 정보를 포함할 수 있는 부분입니다.
+- `<description>`: 커밋의 간단한 설명입니다. 어떤 변경이 이루어졌는지 명확하게 작성합니다.
+- `[optional body]`: 변경의 상세한 설명을 추가할 수 있는 부분입니다. 변경 내용이나 이유 등을 자세히 설명할 때 사용합니다.
+- `[optional footer]`: 커밋에 관련된 이슈 번호 등 추가 정보를 포함할 수 있는 부분입니다.
 
 #### 예시
 
@@ -947,45 +949,45 @@ public void setText(String text, boolean html) throws MessagingException {
 
 #### 1. 쿠키 값 변조 문제
 
-- **문제점**: 사용자가 쿠키 값을 임의로 변경할 수 있다.
-  - **예시**: `Cookie: memberId=1`을 `Cookie: memberId=2`로 변경하면 다른 사용자의 정보에 접근할 수 있다.
-- **해결책**: 세션을 사용하면 클라이언트에 중요한 정보를 직접 저장하지 않고, 추정 불가능한 세션 ID만 쿠키에 저장하여 전달한다.
+- 문제점: 사용자가 쿠키 값을 임의로 변경할 수 있다.
+  - 예시: `Cookie: memberId=1`을 `Cookie: memberId=2`로 변경하면 다른 사용자의 정보에 접근할 수 있다.
+- 해결책: 세션을 사용하면 클라이언트에 중요한 정보를 직접 저장하지 않고, 추정 불가능한 세션 ID만 쿠키에 저장하여 전달한다.
 
 #### 2. 쿠키 정보 탈취 문제
 
-- **문제점**: 쿠키에 저장된 정보는 쉽게 탈취될 수 있다.
-  - **예시**: 개인정보나 신용카드 정보가 쿠키에 저장되면 로컬 PC나 네트워크 전송 구간에서 탈취될 수 있다.
-- **해결책**: 세션을 사용하면 중요한 정보는 서버에 저장되고, 클라이언트에는 추정 불가능한 세션 ID만 전달된다. 따라서 해커가 세션 ID를 탈취해도 중요한 정보를 쉽게 얻을 수 없습니다.
+- 문제점: 쿠키에 저장된 정보는 쉽게 탈취될 수 있다.
+  - 예시: 개인정보나 신용카드 정보가 쿠키에 저장되면 로컬 PC나 네트워크 전송 구간에서 탈취될 수 있다.
+- 해결책: 세션을 사용하면 중요한 정보는 서버에 저장되고, 클라이언트에는 추정 불가능한 세션 ID만 전달된다. 따라서 해커가 세션 ID를 탈취해도 중요한 정보를 쉽게 얻을 수 없습니다.
 
 #### 3. 세션을 사용한 보안 강화
 
-- **임의의 토큰 사용**: 예측 불가능한 임의의 세션 ID을 생성 후 서버에서 세션 ID과 사용자 ID를 매핑하여 관리한다.
-- **세션 ID 만료 시간 설정**: 세션 ID의 만료 시간을 짧게 유지(예: 30분)하거나 해킹이 의심될 경우 강제로 제거할 수 있다.
+- 임의의 토큰 사용: 예측 불가능한 임의의 세션 ID을 생성 후 서버에서 세션 ID과 사용자 ID를 매핑하여 관리한다.
+- 세션 ID 만료 시간 설정: 세션 ID의 만료 시간을 짧게 유지(예: 30분)하거나 해킹이 의심될 경우 강제로 제거할 수 있다.
 
 ### 세션 동작 방식
 
-1. **로그인**
+1. 로그인
 
    - 사용자가 `id`와 `password`를 전달하면 서버에서 사용자 인증을 수행한다.
 
-2. **세션 생성**
+2. 세션 생성
 
    - 추정 불가능한 세션 ID(예: UUID)를 생성하고, 세션 저장소에 사용자 정보를 저장한다.
    - 예시: `Cookie: mySessionId=zz0101xx-bab9-4b92-9b32-dadb280f4b61`
 
-3. **세션 ID를 응답 쿠키로 전달**
+3. 세션 ID를 응답 쿠키로 전달
 
    - 서버는 클라이언트에 `mySessionId` 쿠키를 전달한다.
    - 클라이언트는 이 쿠키를 저장하고, 이후 요청 시 항상 이 쿠키를 서버에 전달한다.
 
-4. **세션 정보 조회**
+4. 세션 정보 조회
    - 서버는 클라이언트가 전달한 `mySessionId` 쿠키를 기반으로 세션 저장소를 조회하여 사용자 정보를 확인한다.
 
 ### 쿠키와 비교한 세션의 장점
 
-- **변조 방지**: 세션 ID는 예측 불가능한 복잡한 값으로 설정된다.
-- **정보 보호**: 쿠키에 중요한 정보를 저장하지 않으므로 쿠키가 탈취되더라도 중요한 정보는 보호된다.
-- **세션 ID 만료 관리**: 해커가 세션 ID을 탈취해도 시간이 지나면 사용할 수 없도록 만료 시간을 짧게 설정할 수 있다.
+- 변조 방지: 세션 ID는 예측 불가능한 복잡한 값으로 설정된다.
+- 정보 보호: 쿠키에 중요한 정보를 저장하지 않으므로 쿠키가 탈취되더라도 중요한 정보는 보호된다.
+- 세션 ID 만료 관리: 해커가 세션 ID을 탈취해도 시간이 지나면 사용할 수 없도록 만료 시간을 짧게 설정할 수 있다.
 
 ### `HttpSession`의 `getSession()`
 
@@ -1008,3 +1010,115 @@ public void setText(String text, boolean html) throws MessagingException {
 스프링은 데이터 접근 계층에서 발생하는 수많은 예외들을 추상화해 DB 기술에 종속적이지 않은 예외 계층을 제공하고 있다. 사실 `JdbcTemplate`을 사용하면 각 리포지토리 메서드에서 발생하는 여러 반복 작업을 대신해준다. 그 반복 작업에는 **예외 발생시 스프링 예외 변환기 실행** 또한 포함되어 있다.
 
 존재하지 않는 아이디로 로그인 시도를 할 때 발생하는 예외 `EmptyResultDataAccessException`는 `NonTransientDataAccessException`을 상속 받는 `RuntimeException` 언체크드 예외 중 하나이다. `NonTransientDataAccessException`는 같은 SQL을 반복해서 실행하면 실패하는 예외이다. (`EmptyResultDataAccessException` → `NonTransientDataAccessException` → `DataAccessException` → `RuntimeException`)
+
+### 아이디 기억
+
+`LoginController.java` 일부
+
+```java
+@RequestMapping("/auth/loginPage.do")
+public ModelAndView loginPage(@RequestParam HashMap<String, String> params, HttpServletRequest req) {
+	ModelAndView mv = new ModelAndView();
+	mv.addObject("key", Calendar.getInstance().getTimeInMillis());
+	mv.addObject("loginForm", new JoinForm());
+	Cookie[] cookies = req.getCookies();
+  if (cookies != null) {
+      for (Cookie cookie : cookies) {
+          if (REMEBER_ME.equals(cookie.getName())) {
+              String memberId = cookie.getValue();
+              req.getSession().setAttribute(REMEBER_ME, memberId);
+              break;
+          }
+      }
+  }
+	mv.setViewName("auth/login");
+	return mv;
+}
+
+@PostMapping("/auth/login.do")
+public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req, HttpServletResponse resp) {
+
+	// (생략)
+
+	// 아이디 기억하기
+	if (loginForm.isRememberMe()) {
+          Cookie cookie = new Cookie(REMEBER_ME, loginForm.getMemberId());
+          cookie.setMaxAge(7 * 24 * 60 * 60); // 일주일
+          cookie.setHttpOnly(true);
+          resp.addCookie(cookie);
+  } else {
+  	Cookie cookie = new Cookie(REMEBER_ME, null);
+      cookie.setMaxAge(0);
+      resp.addCookie(cookie);
+  }
+
+	// (생략)
+
+	return "redirect:/index.do";
+}
+```
+
+#### `cookie.setHttpOnly(true)`를 사용하는 이유
+
+- XSS 공격 방지: `HttpOnly`를 `true`로 설정하면 클라이언트 측 스크립트가 쿠키에 접근할 수 없게 되어 크로스 사이트 스크립팅(XSS) 공격의 위험이 줄어듭니다.
+- JavaScript 접근 차단: 쿠키가 서버에서만 접근 가능하게 하여 클라이언트 측 스크립트에서는 쿠키에 접근할 수 없도록 합니다.
+- 보안 강화: 악성 스크립트에 의해 세션 식별자와 같은 민감한 정보가 도난당하는 것을 방지합니다.
+
+`login.jsp` 일부
+
+```html
+<div class="login--form">
+  <div class="form-group">
+    <label for="user_name">Username</label>
+    <c:choose>
+      <c:when test="${empty sessionScope.rememberMe}">
+        <form:input
+          path="memberId"
+          id="user_name"
+          name="memberId"
+          type="text"
+          class="text_field"
+          placeholder="Enter your username..."
+        />
+      </c:when>
+      <c:otherwise>
+        <!-- remeberMe의 저장된 id 값으로 대체 -->
+        <form:input
+          path="memberId"
+          id="user_name"
+          name="memberId"
+          type="text"
+          class="text_field"
+          value="${sessionScope.rememberMe}"
+        />
+      </c:otherwise>
+    </c:choose>
+    <form:errors path="memberId" cssClass="error" />
+  </div>
+
+  <div class="form-group">
+    <label for="pass">Password</label>
+    <form:input
+      path="passwd"
+      id="pass"
+      name="passwd"
+      type="password"
+      class="text_field"
+      placeholder="Enter your password..."
+    />
+    <form:errors path="passwd" cssClass="error" />
+  </div>
+
+  <div class="form-group">
+    <div class="custom_checkbox">
+      <!-- remeberMe에 값 저장 여부에 따라 체크 표시 결정 -->
+      <input type="checkbox" id="ch2" name="rememberMe" ${not empty
+      sessionScope.rememberMe ? checked : ''}>
+      <label for="ch2">
+        <span class="shadow_checkbox"></span>
+        <span class="label_text">Remember me</span>
+      </label>
+    </div>
+  </div>
+</div>
+```

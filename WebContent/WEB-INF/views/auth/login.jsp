@@ -38,7 +38,16 @@
                         <div class="login--form">
                             <div class="form-group">
                                 <label for="user_name">Username</label>
-                                <form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username..." />
+                                <%-- <form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username..." /> --%>
+                                <c:choose>
+		                            <c:when test="${empty sessionScope.rememberMe}">
+		                            	<form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" placeholder="Enter your username..." />
+		                            </c:when>
+		                           	<c:otherwise>
+		                           		<!-- remeberMe의 저장된 id 값으로 대체 -->
+			                            <form:input path="memberId" id="user_name" name="memberId" type="text" class="text_field" value="${sessionScope.rememberMe}" />
+		                            </c:otherwise>
+	                            </c:choose>
                                 <form:errors path="memberId" cssClass="error" />
                             </div>
 
@@ -50,7 +59,8 @@
 
                             <div class="form-group">
                                 <div class="custom_checkbox">
-                                    <input type="checkbox" id="ch2">
+                                	<!-- remeberMe에 값 저장 여부에 따라 체크 표시 결정 -->
+                                    <input type="checkbox" id="ch2" name="rememberMe" ${not empty sessionScope.rememberMe ? checked : ''}>
                                     <label for="ch2">
                                         <span class="shadow_checkbox"></span>
                                         <span class="label_text">Remember me</span>

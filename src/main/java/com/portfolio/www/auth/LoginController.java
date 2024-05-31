@@ -3,7 +3,9 @@ package com.portfolio.www.auth;
 import java.util.Calendar;
 import java.util.HashMap;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
@@ -30,16 +32,26 @@ public class LoginController {
 	private final LoginService loginService;
 	
 	@RequestMapping("/auth/loginPage.do")
-	public ModelAndView loginPage(@RequestParam HashMap<String, String> params) {
+	public ModelAndView loginPage(@RequestParam HashMap<String, String> params, HttpServletRequest req) {
 		ModelAndView mv = new ModelAndView();
 		mv.addObject("key", Calendar.getInstance().getTimeInMillis());
 		mv.addObject("loginForm", new JoinForm());
+		Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (SessionCookieConst.REMEBER_ME.equals(cookie.getName())) {
+                    String memberId = cookie.getValue();
+                    req.getSession().setAttribute(SessionCookieConst.REMEBER_ME, memberId);
+                    break;
+                }
+            }
+        }
 		mv.setViewName("auth/login");
 		return mv;
 	}
 	
 	@PostMapping("/auth/login.do")
-	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req) {
+	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req, HttpServletResponse resp) {
 		if (bindingResult.hasErrors()) {
 			return "auth/login";
 		}
@@ -53,8 +65,20 @@ public class LoginController {
 		
 		// 로그인 성공
 		
+		// 아이디 기억하기
+		if (loginForm.isRememberMe()) {
+            Cookie cookie = new Cookie(SessionCookieConst.REMEBER_ME, loginForm.getMemberId());
+            cookie.setMaxAge(7 * 24 * 60 * 60); // 일주일
+            cookie.setHttpOnly(true);
+            resp.addCookie(cookie);
+        } else {
+        	Cookie cookie = new Cookie(SessionCookieConst.REMEBER_ME, null);
+            cookie.setMaxAge(0);
+            resp.addCookie(cookie);
+        }
+		
 		// 세션이 있으면 있는 세션 반환, 없으면 신규 세션 생성
-		req.getSession().setAttribute(SessionConst.LOGIN_MEMBER, memberDto.getMemberSeq());
+		req.getSession().setAttribute(SessionCookieConst.LOGIN_MEMBER, memberDto.getMemberSeq());
 		// String referer = req.getHeader("referer");
 		return "redirect:/index.do";
 	}

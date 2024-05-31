@@ -11,4 +11,6 @@ public class LoginForm {
 	
 	@NotBlank
 	private String passwd;
+	
+	private boolean rememberMe;
 }
