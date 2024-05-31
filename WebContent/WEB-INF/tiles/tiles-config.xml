@@ -15,7 +15,7 @@
 	    <put-attribute name="body" value="/WEB-INF/views/auth/join.jsp" /> 
 	</definition>  
 	<!-- 로그인 -->
-	<definition name="auth/login" extends="tiles-default"> 
+	<definition name="auth/login" extends="tiles-default">
 	    <put-attribute name="title" value="로그인" /> 
 	    <put-attribute name="body" value="/WEB-INF/views/auth/login.jsp" /> 
 	</definition>  

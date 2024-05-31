@@ -56,10 +56,16 @@ public class LoginController {
 			return "auth/login";
 		}
 		
+		// 아이디, 패스워드 일치 여부 확인
 		MemberDto memberDto = loginService.login(loginForm);
-		
 		if (memberDto == null) {
 			bindingResult.reject("loginFail", Message.ID_OR_PWD_IS_WRONG.getDescription());
+			return "auth/login";
+		}
+		
+		// 이메일 유효 여부 인증 확인
+		if (!loginService.isEmailAuthenticated(memberDto.getMemberSeq())) {
+			bindingResult.reject("emailNotValidated", Message.AUTH_EMAIL_NOT_VALIDATED.getDescription());
 			return "auth/login";
 		}
 		
