@@ -10,6 +10,7 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -32,7 +33,7 @@ public class LoginController {
 	private final LoginService loginService;
 	
 	@RequestMapping("/auth/loginPage.do")
-	public ModelAndView loginPage(@RequestParam HashMap<String, String> params, HttpServletRequest req) {
+	public ModelAndView loginPage(@RequestParam HashMap<String, String> params, @RequestParam(required=false) String reqURL, HttpServletRequest req) {
 		ModelAndView mv = new ModelAndView();
 		mv.addObject("key", Calendar.getInstance().getTimeInMillis());
 		mv.addObject("loginForm", new JoinForm());
@@ -46,12 +47,13 @@ public class LoginController {
                 }
             }
         }
+        mv.addObject("reqURL", reqURL);
 		mv.setViewName("auth/login");
 		return mv;
 	}
 	
 	@PostMapping("/auth/login.do")
-	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, HttpServletRequest req, HttpServletResponse resp) {
+	public String login(@Validated @ModelAttribute LoginForm loginForm, @RequestParam(required=false) String reqURL, BindingResult bindingResult, HttpServletRequest req, HttpServletResponse resp) {
 		if (bindingResult.hasErrors()) {
 			return "auth/login";
 		}
@@ -85,8 +87,9 @@ public class LoginController {
 		
 		// 세션이 있으면 있는 세션 반환, 없으면 신규 세션 생성
 		req.getSession().setAttribute(SessionCookieConst.LOGIN_MEMBER, memberDto.getMemberSeq());
-		// String referer = req.getHeader("referer");
-		return "redirect:/index.do";
+		
+		// 로그인 필터에서 넘어온 경우 원래 요청했던 URL로 redirect
+		return "redirect:" + (ObjectUtils.isEmpty(reqURL) ? "/index.do" : reqURL);
 	}
 	
 	@PostMapping("/auth/logout.do") 

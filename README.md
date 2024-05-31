@@ -515,6 +515,80 @@ public String login(@ModelAttribute LoginForm form, HttpServletRequest request, 
 }
 ```
 
+### Filter에서 Redirect 후 chain.doFilter를 한 경우
+
+#### 문제 상황
+
+로그인을 하지 않은 상황에서 로그인 후에만 가능하도록 제한한 기능에 접근하려고 할 때 다음과 같은 오류가 발생한다.
+
+##### 오류 메시지
+
+```
+응답이 이미 커밋된 후에는, sendRedirect()를 호출할 수 없습니다.
+com.portfolio.www.filter.LoginFilter.doFilter(LoginFilter.java:61)
+```
+
+##### 오류 발생 부분
+
+`LoginFilter.java` 일부
+
+```java
+49	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+50		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+51		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+52
+53		String requestURI = httpServletRequest.getRequestURI();
+54		String contextPath = httpServletRequest.getContextPath();
+55
+56		// 요청 URI가 로그인이 필요한 URI 배열에 존재하는지 확인
+57		if (Arrays.asList(LOGIN_REQUIRED_URIS).contains(requestURI.replace(contextPath, ""))) {
+58		// 세션에 memberId의 값이 존재하는지 확인
+59			if (httpServletRequest.getSession().getAttribute(SessionCookieConst.LOGIN_MEMBER) == null) {
+60				// 존재하지 않으면 로그인 페이지로 리다이렉트
+61				httpServletResponse.sendRedirect(contextPath + LOGIN_PAGE_URI);
+62			}
+63		}
+64
+65		chain.doFilter(request, response);
+66	}
+```
+
+#### 해결 방법
+
+필터는 서블릿에서 지원하는 기능으로 HTTP 요청이 올 때 해당 요청으로 서블릿을 호출하기 전에 처리하는 전처리 작업과 같다. 위와 같은 방식에서 로그인을 안 했을 때 필터는 다음과 같은 순서로 진행된다.
+
+1. 로그인 페이지로 리다이렉트
+2. 서블릿 로그인 페이지에 맵핑된 내용을 모두 수행
+3. `chain.doFilter()`를 통해 다음 서블릿 또는 필터를 호출
+
+처음에 발생한 HTTP 요청은 이미 2번에서 종료가 된 상태이다. 하지만 위 필터에서는 리다이렉트 후 다시 3번 작업을 진행하려고 한다. 이미 종료된 응답에 또 다시 작업을 진행하려고 하기에 위와 같은 오류가 발생한 것이다. 따라서 아래와 같이 sendRedirect() 후 그 뒤 작업을 하지 못하도록 `return;`을 추가해 주었다.
+
+`LoginFilter.java` 일부
+
+```java
+public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+	HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+	HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+
+	String requestURL = httpServletRequest.getRequestURL().toString();
+	String requestURI = httpServletRequest.getRequestURI();
+	HttpSession session = httpServletRequest.getSession(false);
+	String contextPath = httpServletRequest.getContextPath();
+
+	// 요청 URI가 로그인이 필요한 URI 배열에 존재하는지 확인
+	if (Arrays.asList(LOGIN_REQUIRED_URIS).contains(requestURI.replace(contextPath, ""))) {
+		// 세션에 memberId의 값이 존재하는지 확인
+		if (session == null || session.getAttribute(SessionCookieConst.LOGIN_MEMBER) == null) {
+			// 존재하지 않으면 로그인 페이지로 리다이렉트
+			httpServletResponse.sendRedirect(contextPath + LOGIN_PAGE_URI + "?reqURL=" + requestURL);
+			return;
+		}
+	}
+
+	chain.doFilter(request, response);
+}
+```
+
 ## 📝 메모
 
 ### Github SSH Key

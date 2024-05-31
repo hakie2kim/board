@@ -21,6 +21,7 @@
         <div class="row">
             <div class="col-lg-6 offset-lg-3">
                 <form:form action="${pageContext.request.contextPath}/auth/login.do" method="post" modelAttribute="loginForm">
+					
 					<spring:hasBindErrors name="loginForm">
 			            <c:forEach items="${errors.globalErrors}" var="err">
 			                <div class="error">
@@ -28,6 +29,7 @@
 			                </div>
 			            </c:forEach>
 				    </spring:hasBindErrors>
+				    <input type="hidden" name="reqURL" value="${reqURL}">
                     <div class="cardify login">
                         <div class="login--header">
                             <h3>Welcome Back</h3>
@@ -60,7 +62,7 @@
                             <div class="form-group">
                                 <div class="custom_checkbox">
                                 	<!-- remeberMe에 값 저장 여부에 따라 체크 표시 결정 -->
-                                    <input type="checkbox" id="ch2" name="rememberMe" ${not empty sessionScope.rememberMe ? checked : ''}>
+                                    <input type="checkbox" id="ch2" name="rememberMe" ${not empty sessionScope.rememberMe ? "checked" : ""}>
                                     <label for="ch2">
                                         <span class="shadow_checkbox"></span>
                                         <span class="label_text">Remember me</span>
