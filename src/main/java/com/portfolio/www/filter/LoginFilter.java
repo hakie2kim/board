@@ -24,7 +24,6 @@ import com.portfolio.www.auth.SessionCookieConst;
 @WebFilter(dispatcherTypes = { DispatcherType.REQUEST }, servletNames = { "pf", "pf-rest" })
 public class LoginFilter extends HttpFilter implements Filter {
 	private final String[] LOGIN_REQUIRED_URIS = {
-			"/forum/notice/listPage.do",
 			"/forum/notice/writePage.do"
 	};
 	private final String LOGIN_PAGE_URI = "/auth/loginPage.do";

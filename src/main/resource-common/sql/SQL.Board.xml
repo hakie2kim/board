@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.portfolio.www.dao.mybatis.BoardRepository">
+    <select id="cntTotalPosts">
+    	SELECT COUNT(*) FROM forum.`board`
+    	WHERE board_type_seq = #{boardTypeSeq}
+    </select>
+    <select id="findPaginatedBoards" resultType="BoardListDto">
+    	SELECT b.*, m.member_nm
+    	FROM forum.`board` b
+    	JOIN forum.`member` m
+    	ON b.reg_member_seq = m.member_seq
+		WHERE board_type_seq = #{boardTypeSeq}
+		LIMIT #{from}, #{postsPerPage}
+    </select>
+</mapper>
