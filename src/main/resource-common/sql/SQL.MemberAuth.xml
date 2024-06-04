@@ -10,6 +10,16 @@
     	SELECT * FROM forum.`member_auth`
     	WHERE auth_uri = #{authUri}   	
     </select>
+    
+    <select id="findMemberAuthByMemberSeq" resultType="memberAuthDto">
+    	SELECT * FROM forum.`member_auth`
+    	WHERE member_seq = #{memberSeq}   	
+    </select>
+    
+    <select id="findAuthYn">
+    	SELECT auth_yn FROM forum.`member_auth`
+    	WHERE member_seq = #{memberSeq}   	
+    </select>
     <update id="updateEmailAuthYn">
     	UPDATE forum.`member_auth`
 		SET auth_yn = #{authYn}

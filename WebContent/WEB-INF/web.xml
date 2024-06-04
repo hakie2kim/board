@@ -54,6 +54,23 @@
 	</servlet-mapping>
 	<!-- DispatcherServlet end -->
 	
+	<!-- 로그인 필터 맵핑 start -->
+	<filter>
+		<filter-name>loginFilter</filter-name>
+		<filter-class>com.portfolio.www.filter.LoginFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>loginFilter</filter-name>
+		<servlet-name>pf</servlet-name>
+		<url-pattern>*.do</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>loginFilter</filter-name>
+		<servlet-name>pf-rest</servlet-name>
+		<url-pattern>*.rest</url-pattern>
+	</filter-mapping>
+	<!-- 로그인 필터 맵핑 end -->
+	
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>

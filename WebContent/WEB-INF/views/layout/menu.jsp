@@ -98,7 +98,19 @@
                         </div>
                         <div class="pull-right join desktop-size d-md-block d-none">
                             <a href="<c:url value='/auth/joinPage.do'/>" class="btn btn--round btn-secondary  btn--xs">Join Now</a>
-                            <a href="<c:url value='/auth/loginPage.do'/>" class="btn btn--round btn--xs">Login</a>
+                            <%-- <c:set var="loginOrLogoutLink" value="${empty sessionScope.loginMember ? '/auth/loginPage.do' : '/auth/logout.do'}"/>
+                            <c:set var="loginOrLogout" value="${empty sessionScope.loginMember ? 'Login' : 'Logout'}"/>
+                            <a href="<c:url value='${loginOrLogoutLink}'/>" class="btn btn--round btn--xs">${loginOrLogout}</a> --%>
+                            <c:choose>
+	                            <c:when test="${empty sessionScope.loginMember}">
+	                            	<a href="<c:url value='/auth/loginPage.do'/>" class="btn btn--round btn--xs">Login</a>
+	                            </c:when>
+	                           	<c:otherwise>
+		                            <form action="<c:url value='/auth/logout.do'/>" method="post">
+		                            	<button type="submit">Logout</button>
+		                            </form>
+	                            </c:otherwise>
+                            </c:choose>
                         </div>
                         <div class="pull-right join mobile-size d-md-none d-flex">
                             <a href="#" class="btn btn--round btn-secondary "><span class="lnr lnr-user"></span></a>
@@ -301,7 +313,7 @@
                                     <div class="dropdowns dropdown--menu">
                                         <ul>
                                             <li>
-                                                <a href="<c:url value='/forum//notice/listPage.do'/>">공지사항</a>
+                                                <a href="<c:url value='/forum/notice/listPage.do'/>">공지사항</a>
                                             </li>
                                             <li>
                                                 <a href="all-products.html">Popular Items</a>

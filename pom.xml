@@ -14,6 +14,18 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>5.10.2</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
@@ -63,11 +75,14 @@
 			<artifactId>spring-tx</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
+		
+		<!-- JUnit test 스프링 설정 지원 -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<version>${spring.version}</version>
-			<scope>test</scope>
+			<!-- @ContextConfiguration 사용하기 위해 test -> compile -->
+			<scope>compile</scope>
 		</dependency>
 	
 		<!-- Logback -->
@@ -202,9 +217,55 @@
 			<artifactId>jasypt-spring31</artifactId>
 			<version>1.9.3</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+	
+	<profiles>
+       <profile>
+           <id>local</id>
+           <properties>
+               <env>local</env>
+           </properties>
+       </profile>
+       <profile>
+           <id>dev</id>
+           <properties>
+               <env>dev</env>
+           </properties>
+       </profile>
+       <profile>
+           <id>prod</id>
+           <properties>
+               <env>prod</env>
+           </properties>
+       </profile>
+   	</profiles>
 
 	<build>
+		<finalName>pf</finalName>
+		
+		<!-- 환경설정에 관한 태그 -->
+		<resources>
+			<resource>
+				<directory>src/main/resource-common</directory>
+			</resource>
+			<resource>
+				<directory>src/main/resource-${env}</directory>
+			</resource>
+			<resource>
+				<directory>${project.build.sourceDirectory}</directory>
+				<includes>
+					<include>**/*.java</include>
+				</includes>
+			</resource>
+		</resources>
+		<!-- 환경설정에 관한 태그 -->
+		
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -220,6 +281,17 @@
 					<warSourceDirectory>WebContent</warSourceDirectory>
 				</configuration>
 			</plugin>
+			
+			<!-- 리소스를 시스템 환경에 맞게 구분해주는 플러그인 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- /resource 구분 플러그인 -->
 		</plugins>
 	</build>
 	

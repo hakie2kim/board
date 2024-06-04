@@ -13,4 +13,8 @@
     	SELECT COUNT(*) FROM forum.`member`
     	WHERE member_id = #{memberId}
     </select>
+    <select id="findMember">
+    	SELECT * FROM forum.`member`
+    	WHERE member_id = #{memberId}
+    </select>
 </mapper>
