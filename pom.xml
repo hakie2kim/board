@@ -14,6 +14,18 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>5.10.2</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
@@ -63,11 +75,14 @@
 			<artifactId>spring-tx</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
+		
+		<!-- JUnit test 스프링 설정 지원 -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<version>${spring.version}</version>
-			<scope>test</scope>
+			<!-- @ContextConfiguration 사용하기 위해 test -> compile -->
+			<scope>compile</scope>
 		</dependency>
 	
 		<!-- Logback -->
@@ -202,6 +217,12 @@
 			<artifactId>jasypt-spring31</artifactId>
 			<version>1.9.3</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	
 	<profiles>
@@ -223,7 +244,7 @@
                <env>prod</env>
            </properties>
        </profile>
-   </profiles>
+   	</profiles>
 
 	<build>
 		<finalName>pf</finalName>

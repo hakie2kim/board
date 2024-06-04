@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Root 영역 : service, dao -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/util
+		http://www.springframework.org/schema/util/spring-util-4.1.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+	<!-- 공용 설정 파일 -->
+	<util:properties id="config" location="classpath:*config.ini" />
+
+	<!-- Annotation 기반의 Component Scan 필터(service package 만 검색) -->
+	<context:component-scan base-package="com.portfolio.www" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service" />
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Component" />
+		<context:include-filter type="regex" expression="\.*\.dao\.*" />
+	</context:component-scan>
+	
+	<!-- MyBatis start -->
+	<!-- DAO 구현체 역할을 대신 해주는 클래스 기본설정 4가지가 필요하다. -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 1. DB에 접속 하기 위해서 설정 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 2. myBatis 기본 설정 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 3. query가 적힌 xml 위치 -->
+		<property name="mapperLocations" value="classpath:sql/SQL.*.xml" />
+		<!-- 4. 트랜잭션 관리 -->
+		<property name="transactionFactory">
+			<bean class="org.mybatis.spring.transaction.SpringManagedTransactionFactory" />
+		</property>
+	</bean>
+	<!-- 작업 지시서 DAO 위치를 지정해야 사용 할 수 있음 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.portfolio.www.dao.mybatis" />
+	</bean>
+	<!-- MyBatis end -->
+
+	<!-- 트랜잭션 관리를 위한 bean -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- Bean Validation 관련 start -->
+	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="defaultEncoding" value="UTF-8" />
+    	<property name="basename" value="classpath:errors" />
+	</bean>
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+		<property name="defaultLocale" value="ko" />
+	</bean>
+	<!-- Bean Validation 관련 end -->
+	
+	<!-- 이메일 전송하기 위한 bean 설정 start -->
+	<bean id="javaMailSender"
+		class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.naver.com" />
+		<property name="port" value="587" />
+		<property name="username" value="${email.username}" />
+		<property name="password" value="${email.password}" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+			</props>
+		</property>
+	</bean>
+	<bean id="emailUtil" class="com.portfolio.www.util.EmailUtil">
+		<constructor-arg name="javaMailSender" ref="javaMailSender" />
+		<constructor-arg name="senderEmail" value="${email.username}" />
+	</bean>
+	<!-- 이메일 전송하기 위한 bean 설정 end -->
+	
+	<!-- Jasypt를 이용한 이메일, 비밀번호 암호화 Start -->
+	<bean id="encryptorConfig" class="org.jasypt.encryption.pbe.config.EnvironmentPBEConfig">
+		<!-- 사용할 암호화 알고리즘 -->
+		<property name="algorithm" value="PBEWithMD5AndDES" />
+		<!-- PBE (패스워드 기반 암호화) 암호 설정 -->
+		<property name="password" value="password" />
+	</bean>
+	<bean id="encryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+		<property name="config" ref="encryptorConfig" />
+	</bean>
+	<bean class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+		<constructor-arg ref="encryptor" />
+		<property name="locations" value="classpath:email.properties" />
+	</bean>
+	<!-- Jasypt를 이용한 이메일, 비밀번호 암호화 End -->
+	
+	<tx:annotation-driven/>
+</beans>
