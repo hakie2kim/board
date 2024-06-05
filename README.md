@@ -41,6 +41,15 @@
 - [x] 로그인 페이지의 `Remeber Me` 체크 시 일주일 동안 아이디 기억
 - [x] 로그아웃
 
+### 게시판
+
+### 게시글 목록
+
+- 페이지네이션 (Pagination)
+  - [x] 1 페이지와 마지막 페이지에는 각각 이전, 다음 화살표를 보여주지 않음
+  - [x] 한 페이지 당 출력할 게시글: 10개
+  - [x] 네비게이션 바 - 한 페이지 당 출력할 페이지 번호: 10개
+
 ### 프로젝트 환경 설정
 
 #### Docker DB
@@ -590,6 +599,101 @@ public void doFilter(ServletRequest request, ServletResponse response, FilterCha
 	chain.doFilter(request, response);
 }
 ```
+
+### 게시물 목록에서 필요한 파라미터가 없는 경우
+
+`/forum//notice/listPage.do?page=1&size=10`의 `query string`에서 만약 값을 넘겨주지 않는다면 다음과 같은 에러가 발생한다.
+
+### 문제 상황
+
+```
+Request processing failed; nested exception is java.lang.NumberFormatException: Cannot parse null string
+com.pf.www.forum.notice.controller.NoticeController.listPage(NoticeController.java:25)
+```
+
+`startBoardSeq` 시작할 게시물 번호를 구하기 위해 `String`에서 `Integer`로 변환을 시도한다. 이때 `query string`의 값이 없는 경우 `null` 값을 `Integer` 값으로 변환하려 시도하기 때문에 위와 같은 에러가 발생한 것이다.
+
+### 해결 방법
+
+`page`의 값과 `size`의 값이 주어지지 않아도 기본값을 갖고 있게 `Spring`의 `@RequestParam` 기능을 사용했다.
+
+```java
+public ModelAndView listPage(
+  @RequestParam(defaultValue="1") Integer page,
+  @RequestParam(defaultValue="10") Integer size
+) {
+...
+```
+
+### `JSP`의 `EL` 값 조회
+
+#### 문제 상황
+
+```
+org.apache.jasper.JasperException: 행 [93]에서 [/WEB-INF/views/forum/notice/list.jsp]을(를) 처리하는 중 예외 발생
+
+90 </c:if>
+91   <c:forEach var="pageNum" begin="${pagination.startPage}" end="${pagination.endPage}">
+92     <c:if test="${pagination.currentPage eq pageNum}">
+93       <a class="page-numbers current" href="<c:url value='/forum/notice/listPage.do?page=${pageNum}&size=${pagination.postsPerPage}'/>">${pageNum}</a>
+94     </c:if>
+95     <c:if test="${pagination.currentPage ne pageNum}">
+96       <a class="page-numbers" href="<c:url value='/forum/notice/listPage.do?page=${pageNum}&size=${pagination.postsPerPage}'/>">${pageNum}</a>
+
+javax.el.PropertyNotFoundException: [postsPerPage] 특성이 [com.pf.www.forum.notice.util.Pagination] 유형에 없습니다.
+```
+
+#### 해결 방법
+
+`EL`은 객체의 값을 `${객체주소.필드}`와 같이 조회할 때 해당 클래스에 `getter`가 있는지 확인한다. 없는 경우 위와 같은 에러가 발생한다. 따라서 `Pagination`에 `getPostsPerPage()` 메서드를 추가해주었다.
+
+### boolean 필드에 Lombok @Getter 애너테이션 사용 하는 경우
+
+#### 문제 상황
+
+페이지네이션을 사용하는 `list.jsp`의 일부가 표시되지 않고 다음과 같은 오류 메시지가 발생한다.
+
+##### 오류 메시지
+
+```
+javax.el.PropertyNotFoundException: [isPrev] 특성이 [com.portfolio.www.util.Pagination] 유형에 없습니다.
+at org.apache.jsp.WEB_002dINF.views.forum.notice.list_jsp._jspx_meth_c_005fif_005f0(list_jsp.java:351)
+```
+
+##### 오류 발생 부분
+
+`Pagination.java` 일부
+
+```java
+@Setter
+@Getter
+public class Pagination {
+	private int totalPosts; // 전체 게시글 개수
+	private int currentPage; // 현재 페이지 번호
+	private int postsPerPage; // 한 페이지 당 게시글 개수
+
+	public static int DISPLAY_PAGE_NUM = 10; // 한 페이지 당 출력할 게시글
+
+	private int totalPages; // 전체 페이지 개수
+	private int startPageNum; // 시작 페이지 번호
+	private int endPageNum; // 끝 페이지 번호
+	private boolean isPrev; // 이전 화살표 표시 여부
+	private boolean isNext; // 다음 화살표 표시 여부
+```
+
+`list.jsp`의 일부
+
+```jsp
+<!-- 이전 화살표 -->
+<c:if test="${pagination.isPrev}">
+
+<!-- 다음 화살표 -->
+<c:if test="${pagination.isNext}">
+```
+
+#### 해결 방법
+
+Lombok의 `@Getter` 애너테이션은 `boolean` 타입의 필드를 `is[앞 글자를 대문자로 변경한 필드의 이름]` 다음과 같이 변경한다. 따라서 위와 같이 `boolean` 타입의 필드 이름이 `isPrev`이면 getter를 만들어주지 못해 위와 같은 오류가 발생하는 것이다. 그렇기 때문에 `boolean` 타입의 필드 이름을 각각 `prev`, `next`로 바꾸어주었다.
 
 ## 📝 메모
 
@@ -1198,3 +1302,159 @@ public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResul
   </div>
 </div>
 ```
+
+### 페이지네이션 (Pagination)
+
+생성자를 통해 `전체 게시물 개수`, `현재 페이지 번호`, `한 페이지 당 게시물 개수`가 주어지면 `전체 페이지 개수`, `시작 페이지 번호`, `끝 페이지 번호`, `이전 & 다음 화살표 표시 여부`가 차례로 정해진다.
+
+#### 전체 페이지 개수
+
+- 필요한 값: `전체 게시물 개수`, `한 페이지 당 게시물 개수`
+
+`전체 게시물 개수` / `한 페이지 당 게시물 개수`가 나머지 없이 나눠 떨어진다면 전체 페이지 개수를 구할 수 있다. 하지만 나눠 떨어지지 않는 경우는 어떨까? 단순히 1을 더하면 될 거 같지만 이때는 나머지 없이 나눠 떨어지는 경우에 부합하지 않는다.
+
+예) `한 페이지 당 게시물 개수`가 `5`인 경우
+
+```
+(1) `전체 게시물 개수`가 `1`, `2`, `3`, `4`, `5`인 경우에는 페이지가 `1`개가 필요
+(2) `전체 게시물 개수`가 `6`, `7`, `8`, `9`, `10`인 경우에는 페이지가 `2`개가 필요
+(3) `전체 게시물 개수`가 `11`, `12`, `13`, `14`, `15`인 경우에는 페이지가 `3`개가 필요
+...
+```
+
+`전체 게시물 개수`가 `한 페이지 당 게시물 개수`의 배수가 되는 시점에 필요한 페이지의 개수가 올라가는 것을 확인할 수 있다. 따라서 `한 페이지 당 게시물 개수`로 나눈 몫이 일정해야 한다. 하지만 `1`, `2`, `3`, `4`의 경우는 `0`이지만 `5` 혼자만 `1`이다. `0`부터 `4`까지는 몫이 `0`이기 때문에 `전체 게시물 개수`에서 `1`을 빼준다.
+
+```
+((전체 게시물 개수) - 1) / (한 페이지 당 게시물 개수) + 1
+```
+
+#### 끝 페이지 번호
+
+- 필요한 값: `현재 페이지 번호`, `한번에 표시할 페이지 개수`, `전체 페이지 개수`
+
+예) `현재 페이지 번호`가 `17`이고 `한번에 표시할 페이지 개수`가 `5`인 경우
+
+```
+(1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (11, 12, 13, 14, 15), (16, 17, 18, 19, 20), ...
+```
+
+`전체 페이지 개수`를 구하는 식과 비슷하게 `한번에 표시할 페이지 개수`로 묶었을 때 끝 번호가 구하고자 하는 `끝 페이지 번호가` 된다. 나누어 떨어지는 경우만 몫이 증가하는 형태로 규칙이 깨지기 때문에 마찬가지로 `1`을 빼준다.
+
+```
+(((현재 페이지 번호) - 1) / (한번에 표시할 페이지 개수) + 1) * 한번에 표시할 페이지 개수
+```
+
+하지만 `전체 페이지 개수`가 `끝 페이지 번호` 보다 작은 경우 `끝 페이지 번호`는 `전체 페이지 개수`가 된다.
+
+```java
+if (this.totalPages < this.endPage)
+  this.endPage = this.totalPages;
+```
+
+#### 시작 페이지 번호
+
+`끝 페이지 번호`와 비슷한 방법으로 구할 수 있다.
+
+```
+((현재 페이지 번호) - 1) / (한번에 표시할 페이지 개수) + 1
+```
+
+#### 이전 화살표 표시 여부
+
+`시작 페이지 번호`가 `1`인 경우에만 표시하지 않고 나머지는 모두 표시한다.
+
+#### 다음 화살표 표시 여부
+
+`끝 페이지 번호`가 `전체 페이지 개수`인 경우에만 표시하지 않고 나머지는 모두 표시한다.
+
+```java
+package com.portfolio.www.util;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
+public class Pagination {
+	private int totalPosts; // 전체 게시글 개수
+	private int currentPage; // 현재 페이지 번호
+	private int postsPerPage; // 한 페이지 당 게시글 개수
+
+	public static int DISPLAY_PAGE_NUM = 10; // 한 페이지 당 출력할 게시글
+
+	private int totalPages; // 전체 페이지 개수
+	private int startPageNum; // 시작 페이지 번호
+	private int endPageNum; // 끝 페이지 번호
+	private boolean isPrev; // 이전 화살표 표시 여부
+	private boolean isNext; // 다음 화살표 표시 여부
+
+	public Pagination(int totalPosts, int currentPage, int postsPerPage) {
+		this.totalPosts = totalPosts;
+		this.currentPage = currentPage;
+		this.postsPerPage = postsPerPage;
+
+		setTotalPages();
+		setStartPageNum();
+		setEndPageNum();
+		setIsPrev();
+		setIsNext();
+	}
+
+	public void setTotalPages() {
+		this.totalPages = ((this.totalPosts - 1) / this.postsPerPage) + 1;
+	}
+
+	public void setStartPageNum() {
+		this.startPageNum = ((this.currentPage - 1) / DISPLAY_PAGE_NUM) * DISPLAY_PAGE_NUM + 1;
+	}
+
+	public void setEndPageNum() {
+		this.endPageNum = (((this.currentPage - 1) / DISPLAY_PAGE_NUM) + 1) * DISPLAY_PAGE_NUM;
+
+		if (this.totalPages < this.endPageNum)
+			this.endPageNum = this.totalPages;
+	}
+
+	public void setIsPrev() {
+		this.isPrev = (this.startPageNum == 1) ? false : true;
+	}
+
+	public void setIsNext() {
+		this.isNext = (this.endPageNum == this.totalPages) ? false : true;
+	}
+}
+```
+
+### `SQL LIMIT x OFFSET y`
+
+```sql
+SELECT b.board_seq, b.board_type_seq, b.title, b.content, b.hit, b.del_yn, b.reg_dtm, b.reg_member_seq, b.update_dtm, b.update_member_seq, m.member_id
+FROM forum.`board` b
+JOIN forum.`member` m
+ON b.reg_member_seq = m.member_seq
+LIMIT 20, OFFSET 10;
+```
+
+위와 같은 쿼리를 사용하게 되면 페이지에 따라 보여지는 게시물 목록을 다르게 설정할 수 있다. 위 쿼리는 처음 20개 행을 건너 뛰고 10개의 행을 갖고 온다. LIMIT을 사용해 페이지마다 원하는 게시물을 갖고 오게하는 sql은 다음과 같다.
+
+```sql
+SELECT b.board_seq, b.board_type_seq, b.title, b.content, b.hit, b.del_yn, b.reg_dtm, b.reg_member_seq, b.update_dtm, b.update_member_seq, m.member_id
+FROM forum.`board` b
+JOIN forum.`member` m
+ON b.reg_member_seq = m.member_seq
+LIMIT ((현재 페이지) - 1) * (페이지 당 게시물 수), OFFSET (페이지 당 게시물 수);
+```
+
+참고로 `OFFSET`은 생략 가능하다.
+
+### 식별 vs. 비식별 관계
+
+- 식별: 부모 테이블에 데이터가 존재해야 자식 테이블에 데이터를 입력할 수 있음
+
+  예) `자동차 테이블`에서 `자동차_아이디`가 `pk`일 때 `바퀴 테이블`에서 `자동차_아이디`를 `pk`로 갖는 경우
+
+- 비식별: 자식 데이터는 부모 데이터가 없어도 독립적으로 생성될 수 있음
+
+  예) `자동차 테이블`에서 `자동차_아이디`가 `pk`일 때 `자동차_아이디`가 `pk`, `바퀴 테이블`에서 `자동차_아이디`를 `pk`로 갖지 않는 경우
+
+이를 바탕으로 `board_type`, `board`이 부모, 자식 테이블로 맺어진 식별 관계임을 알 수 있다.
