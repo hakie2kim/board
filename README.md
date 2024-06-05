@@ -46,9 +46,9 @@
 ### 게시글 목록
 
 - 페이지네이션 (Pagination)
-  - [ ] 1 페이지와 마지막 페이지에는 각각 이전, 다음 화살표를 보여주지 않음
+  - [x] 1 페이지와 마지막 페이지에는 각각 이전, 다음 화살표를 보여주지 않음
   - [x] 한 페이지 당 출력할 게시글: 10개
-  - [ ] 한 페이지 당 출력할 페이지 인덱스: 10개
+  - [x] 네비게이션 바 - 한 페이지 당 출력할 페이지 번호: 10개
 
 ### 프로젝트 환경 설정
 
@@ -646,6 +646,54 @@ javax.el.PropertyNotFoundException: [postsPerPage] 특성이 [com.pf.www.forum.n
 #### 해결 방법
 
 `EL`은 객체의 값을 `${객체주소.필드}`와 같이 조회할 때 해당 클래스에 `getter`가 있는지 확인한다. 없는 경우 위와 같은 에러가 발생한다. 따라서 `Pagination`에 `getPostsPerPage()` 메서드를 추가해주었다.
+
+### boolean 필드에 Lombok @Getter 애너테이션 사용 하는 경우
+
+#### 문제 상황
+
+페이지네이션을 사용하는 `list.jsp`의 일부가 표시되지 않고 다음과 같은 오류 메시지가 발생한다.
+
+##### 오류 메시지
+
+```
+javax.el.PropertyNotFoundException: [isPrev] 특성이 [com.portfolio.www.util.Pagination] 유형에 없습니다.
+at org.apache.jsp.WEB_002dINF.views.forum.notice.list_jsp._jspx_meth_c_005fif_005f0(list_jsp.java:351)
+```
+
+##### 오류 발생 부분
+
+`Pagination.java` 일부
+
+```java
+@Setter
+@Getter
+public class Pagination {
+	private int totalPosts; // 전체 게시글 개수
+	private int currentPage; // 현재 페이지 번호
+	private int postsPerPage; // 한 페이지 당 게시글 개수
+
+	public static int DISPLAY_PAGE_NUM = 10; // 한 페이지 당 출력할 게시글
+
+	private int totalPages; // 전체 페이지 개수
+	private int startPageNum; // 시작 페이지 번호
+	private int endPageNum; // 끝 페이지 번호
+	private boolean isPrev; // 이전 화살표 표시 여부
+	private boolean isNext; // 다음 화살표 표시 여부
+```
+
+`list.jsp`의 일부
+
+```jsp
+<!-- 이전 화살표 -->
+<c:if test="${pagination.isPrev}">
+
+<!-- 다음 화살표 -->
+<c:if test="${pagination.isNext}">
+```
+
+#### 해결 방법
+
+Lombok의 `@Getter` 애너테이션은 `boolean` 타입의 필드를 `is[앞 글자를 대문자로 변경한 필드의 이름]` 다음과 같이 변경한다. 따라서 위와 같이 `boolean` 타입의 필드 이름이 `isPrev`이면 getter를 만들어주지 못해 위와 같은 오류가 발생하는 것이다. 그렇기 때문에 `boolean` 타입의 필드 이름을 각각 `prev`, `next`로 바꾸어주었다.
 
 ## 📝 메모
 
@@ -1320,8 +1368,13 @@ if (this.totalPages < this.endPage)
 `끝 페이지 번호`가 `전체 페이지 개수`인 경우에만 표시하지 않고 나머지는 모두 표시한다.
 
 ```java
-package com.pf.www.forum.notice.util;
+package com.portfolio.www.util;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class Pagination {
 	private int totalPosts; // 전체 게시글 개수
 	private int currentPage; // 현재 페이지 번호
@@ -1330,10 +1383,10 @@ public class Pagination {
 	public static int DISPLAY_PAGE_NUM = 10; // 한 페이지 당 출력할 게시글
 
 	private int totalPages; // 전체 페이지 개수
-	private int startPage; // 시작 페이지 번호
-	private int endPage; // 끝 페이지 번호
-	private boolean prev; // 이전 화살표 표시 여부
-	private boolean next; // 다음 화살표 표시 여부
+	private int startPageNum; // 시작 페이지 번호
+	private int endPageNum; // 끝 페이지 번호
+	private boolean isPrev; // 이전 화살표 표시 여부
+	private boolean isNext; // 다음 화살표 표시 여부
 
 	public Pagination(int totalPosts, int currentPage, int postsPerPage) {
 		this.totalPosts = totalPosts;
@@ -1341,57 +1394,33 @@ public class Pagination {
 		this.postsPerPage = postsPerPage;
 
 		setTotalPages();
-		setStartPage();
-		setEndPage();
-		setPrev();
-		setNext();
-	}
-
-	public int getTotalPages() {
-		return totalPages;
+		setStartPageNum();
+		setEndPageNum();
+		setIsPrev();
+		setIsNext();
 	}
 
 	public void setTotalPages() {
 		this.totalPages = ((this.totalPosts - 1) / this.postsPerPage) + 1;
 	}
 
-	public int getCurrentPage() {
-		return currentPage;
+	public void setStartPageNum() {
+		this.startPageNum = ((this.currentPage - 1) / DISPLAY_PAGE_NUM) * DISPLAY_PAGE_NUM + 1;
 	}
 
-	public int getStartPage() {
-		return startPage;
+	public void setEndPageNum() {
+		this.endPageNum = (((this.currentPage - 1) / DISPLAY_PAGE_NUM) + 1) * DISPLAY_PAGE_NUM;
+
+		if (this.totalPages < this.endPageNum)
+			this.endPageNum = this.totalPages;
 	}
 
-	public void setStartPage() {
-		this.startPage = ((this.currentPage - 1) / DISPLAY_PAGE_NUM) * DISPLAY_PAGE_NUM + 1;
+	public void setIsPrev() {
+		this.isPrev = (this.startPageNum == 1) ? false : true;
 	}
 
-	public int getEndPage() {
-		return endPage;
-	}
-
-	public void setEndPage() {
-		this.endPage = (((this.currentPage - 1) / DISPLAY_PAGE_NUM) + 1) * DISPLAY_PAGE_NUM;
-
-		if (this.totalPages < this.endPage)
-			this.endPage = this.totalPages;
-	}
-
-	public boolean getPrev() {
-		return prev;
-	}
-
-	public void setPrev() {
-		this.prev = (this.startPage == 1) ? false : true;
-	}
-
-	public boolean getNext() {
-		return next;
-	}
-
-	public void setNext() {
-		this.next = (this.endPage == this.totalPages) ? false : true;
+	public void setIsNext() {
+		this.isNext = (this.endPageNum == this.totalPages) ? false : true;
 	}
 }
 ```

@@ -13,8 +13,8 @@ public class Pagination {
 	public static int DISPLAY_PAGE_NUM = 10; // 한 페이지 당 출력할 게시글
 	
 	private int totalPages; // 전체 페이지 개수
-	private int startPage; // 시작 페이지 번호
-	private int endPage; // 끝 페이지 번호
+	private int startPageNum; // 시작 페이지 번호
+	private int endPageNum; // 끝 페이지 번호
 	private boolean prev; // 이전 화살표 표시 여부
 	private boolean next; // 다음 화살표 표시 여부
 	
@@ -24,32 +24,32 @@ public class Pagination {
 		this.postsPerPage = postsPerPage;
 		
 		setTotalPages();
-		setStartPage();
-		setEndPage();
-		setPrev();
-		setNext();
+		setStartPageNum();
+		setEndPageNum();
+		setIsPrev();
+		setIsNext();
 	}
 
 	public void setTotalPages() {
 		this.totalPages = ((this.totalPosts - 1) / this.postsPerPage) + 1;
 	}
 
-	public void setStartPage() {
-		this.startPage = ((this.currentPage - 1) / DISPLAY_PAGE_NUM) * DISPLAY_PAGE_NUM + 1;
+	public void setStartPageNum() {
+		this.startPageNum = ((this.currentPage - 1) / DISPLAY_PAGE_NUM) * DISPLAY_PAGE_NUM + 1;
 	}
 
-	public void setEndPage() {
-		this.endPage = (((this.currentPage - 1) / DISPLAY_PAGE_NUM) + 1) * DISPLAY_PAGE_NUM;
+	public void setEndPageNum() {
+		this.endPageNum = (((this.currentPage - 1) / DISPLAY_PAGE_NUM) + 1) * DISPLAY_PAGE_NUM;
 		
-		if (this.totalPages < this.endPage)
-			this.endPage = this.totalPages;
+		if (this.totalPages < this.endPageNum)
+			this.endPageNum = this.totalPages;
 	}
 
-	public void setPrev() {
-		this.prev = (this.startPage == 1) ? false : true;
+	public void setIsPrev() {
+		this.prev = (this.startPageNum == 1) ? false : true;
 	}
 
-	public void setNext() {
-		this.next = (this.endPage == this.totalPages) ? false : true;
+	public void setIsNext() {
+		this.next = (this.endPageNum == this.totalPages) ? false : true;
 	}
 }
