@@ -363,10 +363,10 @@
 
 
     /* trumbowyg init*/
-    var trmbg_container = $('#trumbowyg-demo');
+    /*var trmbg_container = $('#trumbowyg-demo');
     if (trmbg_container.length) {
         trmbg_container.trumbowyg();
-    }
+    }*/
 
 
     /* bootstrap tooltip activation */

@@ -50,6 +50,12 @@
   - [x] 한 페이지 당 출력할 게시글: 10개
   - [x] 네비게이션 바 - 한 페이지 당 출력할 페이지 번호: 10개
 
+### 게시글 작성
+
+- 제약 사항
+  - [x] 제목은 공백 또는 빈 칸일 수 없고 5~50자 사이
+  - [x] 내용은 공백 또는 빈 칸일 수 없고 5~1000자 사이
+
 ### 프로젝트 환경 설정
 
 #### Docker DB
@@ -694,6 +700,63 @@ public class Pagination {
 #### 해결 방법
 
 Lombok의 `@Getter` 애너테이션은 `boolean` 타입의 필드를 `is[앞 글자를 대문자로 변경한 필드의 이름]` 다음과 같이 변경한다. 따라서 위와 같이 `boolean` 타입의 필드 이름이 `isPrev`이면 getter를 만들어주지 못해 위와 같은 오류가 발생하는 것이다. 그렇기 때문에 `boolean` 타입의 필드 이름을 각각 `prev`, `next`로 바꾸어주었다.
+
+### Integer 타입에는 @NotBlank가 아닌 @NotNull을 사용
+
+#### 문제 상황
+
+공지사항 게시글 작성에서 제목과 내용을 작성 후 전송 버튼을 눌렀더니 다음과 같은 오류가 발생했다.
+
+##### 오류 메시지
+
+```
+HV000030: No validator could be found for constraint 'javax.validation.constraints.NotBlank' validating type 'java.lang.Integer'.
+Check configuration for 'boardTypeSeq'
+```
+
+##### 오류 발생 부분
+
+`RestNoticeController.java` 일부
+
+```java
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+public class RestNoticeController {
+	private final BoardService boardService;
+
+	@PostMapping("/forum/notice/write.rest")
+	public BoardWriteDto write(
+			@Valid @RequestBody BoardWriteDto boardWriteDto,
+			BindingResult bindingResult,
+			@SessionAttribute(name = SessionCookieConst.LOGIN_MEMBER, required = false) Integer memberSeq
+```
+
+`BoardWriteDto.java` 일부
+
+```java
+@Data
+public class BoardWriteDto {
+	private int boardSeq;
+
+	@NotBlank
+	private int boardTypeSeq;
+
+	@NotBlank
+	@Size(min = 5, max = 50)
+	private String title;
+
+	@NotBlank
+	@Size(min = 5, max = 1000)
+	private String content;
+
+	private int regMemberSeq;
+}
+```
+
+#### 해결 방법
+
+`@NotEmpty`, `@NotBlank`와 같은 검증 애너테이션은 `Integer`에 사용할 수 없기 때문에 `boardTypeSeq`의 검증 애너테이션을 `@NotNull`로 바꿔주었다.
 
 ## 📝 메모
 
@@ -1458,3 +1521,118 @@ LIMIT ((현재 페이지) - 1) * (페이지 당 게시물 수), OFFSET (페이�
   예) `자동차 테이블`에서 `자동차_아이디`가 `pk`일 때 `자동차_아이디`가 `pk`, `바퀴 테이블`에서 `자동차_아이디`를 `pk`로 갖지 않는 경우
 
 이를 바탕으로 `board_type`, `board`이 부모, 자식 테이블로 맺어진 식별 관계임을 알 수 있다.
+
+### `@NotNull`, `@NotEmpty`, `@NotBlank` 의 차이점
+
+| 어노테이션  | 설명                                         | 적용 대상                      | 허용되지 않는 예시  |
+| ----------- | -------------------------------------------- | ------------------------------ | ------------------- |
+| `@NotNull`  | `null`이 아님                                | 모든 타입                      | `null`              |
+| `@NotEmpty` | `null`이 아니고, 요소가 1개 이상             | Collection, Map, Array, String | `null`, `""`        |
+| `@NotBlank` | `null`이 아니고, 공백이 아닌 문자가 1개 이상 | String                         | `null`, `""`, `" "` |
+
+다음은 REST API 요청 값을 검증하고 Bean Validation 예외를 처리하는 방법을 정리한 내용이다:
+
+### REST API 요청 값 검증 및 Bean Validation 예외 처리
+
+#### 1. 요청 값 검증
+
+##### DTO 클래스에 검증 어노테이션 추가
+
+```java
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+public class UserDTO {
+
+    @NotNull(message = "ID cannot be null")
+    private Long id;
+
+    @NotBlank(message = "Name cannot be blank")
+    @Size(min = 2, max = 30, message = "Name must be between 2 and 30 characters")
+    private String name;
+
+    // getters and setters
+}
+```
+
+##### 컨트롤러에서 검증 적용
+
+```java
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @PostMapping
+    public ResponseEntity<String> createUser(@Valid @RequestBody UserDTO userDTO) {
+        // 유효성 검증에 통과하면 로직 실행
+        return ResponseEntity.ok("User is valid");
+    }
+}
+```
+
+#### 2. Bean Validation 예외 처리
+
+Bean Validation에서 발생하는 예외를 처리하기 위해 `@ControllerAdvice`와 `@ExceptionHandler`를 사용하여 전역 예외 처리기를 구현할 수 있다.
+
+##### 전역 예외 처리기 구현
+
+```java
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+}
+```
+
+##### 예외 발생 시 응답 예시
+
+`POST /api/users` 요청에서 유효성 검증에 실패하면, 다음과 같은 형태의 응답을 받게 된다.
+
+```json
+{
+  "id": "ID cannot be null",
+  "name": "Name must be between 2 and 30 characters"
+}
+```
+
+#### 3. 정리
+
+- DTO 클래스에 유효성 검증 어노테이션 적용: `@NotNull`, `@NotBlank`, `@Size` 등의 어노테이션을 사용하여 필드 단위의 유효성을 검증한다.
+- 컨트롤러에서 유효성 검증 적용: `@Valid` 또는 `@Validated` 어노테이션을 사용하여 컨트롤러 메서드의 파라미터로 전달된 객체를 검증한다.
+- 전역 예외 처리기 구현: `@ControllerAdvice`와 `@ExceptionHandler`를 사용하여 유효성 검증 실패 시 발생하는 예외를 처리하고 적절한 응답을 반환한다.
+
+이 방법을 통해 REST API 요청 값의 유효성을 검증하고, 유효성 검증 실패 시 사용자에게 명확한 오류 메시지를 제공할 수 있다.
+
+### `@RequestBody`, `@RequestParam`, `@ModelAttribute`
+
+| 어노테이션        | 설명                                                               | 사용 경우                                     | 장점                                                        |
+| ----------------- | ------------------------------------------------------------------ | --------------------------------------------- | ----------------------------------------------------------- |
+| `@RequestBody`    | HTTP 요청 본문을 Java 객체로 변환                                  | POST, PUT, PATCH 등 REST API 방식의 JSON 요청 | 복잡한 JSON 구조 처리 가능, 데이터 유효성 검증 용이         |
+| `@RequestParam`   | HTTP 요청 URL의 쿼리 파라미터나 폼 데이터를 메서드 파라미터로 전달 | GET, POST                                     | 간단한 데이터 전달 용이, 기본값 설정 및 필수 여부 지정 가능 |
+| `@ModelAttribute` | 요청 파라미터를 객체에 바인딩하고 모델에 추가                      | GET, POST                                     | 폼 데이터 바인딩 용이, 모델 객체를 뷰로 전달 가능           |

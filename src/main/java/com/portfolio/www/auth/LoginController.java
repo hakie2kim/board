@@ -53,7 +53,7 @@ public class LoginController {
 	}
 	
 	@PostMapping("/auth/login.do")
-	public String login(@Validated @ModelAttribute LoginForm loginForm, @RequestParam(required=false) String reqURL, BindingResult bindingResult, HttpServletRequest req, HttpServletResponse resp) {
+	public String login(@Validated @ModelAttribute LoginForm loginForm, BindingResult bindingResult, @RequestParam(required=false) String reqURL, HttpServletRequest req, HttpServletResponse resp) {
 		if (bindingResult.hasErrors()) {
 			return "auth/login";
 		}

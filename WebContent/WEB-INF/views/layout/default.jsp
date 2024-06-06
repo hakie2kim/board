@@ -36,15 +36,14 @@
 	<script src="<%=ctx%>/assest/js/page.js"></script>
 </head>
 <body class="preload home1 mutlti-vendor">
-    <tiles:insertAttribute name="menu" />
-    <tiles:insertAttribute name="body" />
-    <tiles:insertAttribute name="footer" />
-    
     <!--//////////////////// JS GOES HERE ////////////////////-->
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0C5etf1GVmL_ldVAichWwFFVcDfa1y_c"></script>
     <!-- inject:js -->
     <script src="<%=ctx%>/assest/template/js/vendor/jquery/jquery-1.12.3.js"></script>
+    <%-- <!-- 추가 시작 -->
+	<script src="http://code.jquery.com/jquery-latest.js"></script>
+	<!-- 추가 끝 --> --%>
     <script src="<%=ctx%>/assest/template/js/vendor/jquery/popper.min.js"></script>
     <script src="<%=ctx%>/assest/template/js/vendor/jquery/uikit.min.js"></script>
     <script src="<%=ctx%>/assest/template/js/vendor/bootstrap.min.js"></script>
@@ -64,5 +63,9 @@
     <script src="<%=ctx%>/assest/template/js/main.js"></script>
     <script src="<%=ctx%>/assest/template/js/map.js"></script>
     <!-- endinject -->
+    
+    <tiles:insertAttribute name="menu" />
+    <tiles:insertAttribute name="body" />
+    <tiles:insertAttribute name="footer" />
 </body>
 </html>

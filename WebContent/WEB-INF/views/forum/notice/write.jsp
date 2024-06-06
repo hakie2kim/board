@@ -4,11 +4,6 @@
 <link rel="stylesheet" href="<%=ctx%>/assest/template/css/trumbowyg.min.css">
 <script src="<%=ctx%>/assest/template/js/vendor/trumbowyg.min.js"></script>
 <script src="<%=ctx%>/assest/template/js/vendor/trumbowyg/ko.js"></script>
-<script type="text/javascript">
-	$('#trumbowyg-demo').trumbowyg({
-	    lang: 'kr'
-	});
-</script>
 <!--================================
 	START DASHBOARD AREA
 =================================-->
@@ -17,30 +12,30 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="question-form cardify p-4">
-                    <form action="#">
-                        <div class="form-group">
-                            <label>제목</label>
-                            <input type="text" placeholder="Enter title here" required>
+                    <div class="form-group">
+                        <label>제목</label>
+                        <input type="text" name="title" placeholder="Enter title here" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <div id="content"></div>
+                    </div>
+                    <!-- <form action="#"> -->
+                    <div class="form-group">
+                        <div class="attachments">
+                            <label>Attachments</label>
+                            <label>
+                                <span class="lnr lnr-paperclip"></span> Add File
+                                <span>or Drop Files Here</span>
+                                <input type="file" style="display:none;">
+                            </label>
                         </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <div id="trumbowyg-demo"></div>
-                        </div>
-                        <div class="form-group">
-                            <div class="attachments">
-                                <label>Attachments</label>
-                                <label>
-                                    <span class="lnr lnr-paperclip"></span> Add File
-                                    <span>or Drop Files Here</span>
-                                    <input type="file" style="display:none;">
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn--md btn-primary">Submit Request</button>
-                        	<a href="<c:url value='/forum/notice/listPage.do'/>" class="btn btn--md btn-light">Cancel</a>
-                        </div>
-                    </form>
+                    </div>
+                    <!-- </form> -->
+                    <div class="form-group">
+                        <button class="btn btn--md btn-primary" onClick="javascript:writePost();">Submit Request</button>
+                    	<a href="<c:url value='/forum/notice/listPage.do'/>" class="btn btn--md btn-light">Cancel</a>
+                    </div>
                 </div><!-- ends: .question-form -->
             </div>
             <!-- end .col-md-12 -->
@@ -52,3 +47,44 @@
 <!--================================
 	END DASHBOARD AREA
 =================================-->
+<script type="text/javascript">
+	/* trumbowyg init*/
+	let trmbg_container = $('#content');
+	if (trmbg_container.length) {
+	    trmbg_container.trumbowyg({lang: 'kr'});
+	}
+	
+	/* $('#content').trumbowyg({
+	    lang: 'kr'
+	}); */
+	
+    function writePost() {
+	  	$.ajax({        
+	  		type : 'post',
+	  		url : '<%=ctx%>/forum/notice/write.rest',
+	  		headers : {
+	  			'content-type': 'application/json'
+	  		},
+	  		dataType : 'json',
+	  		data : JSON.stringify({
+	  			boardTypeSeq: 1, // 공지사항
+	  			title: $('input[name=title]').val(),
+	  			content: $('#content').trumbowyg('html')
+	  		}),
+	  		success : function(result) {
+	  			let url = '<%=ctx%>/forum/notice/readPage.do?boardSeq=';
+				url += result.boardSeq;
+				url += '&boardTypeSeq=';
+				url += result.boardTypeSeq;
+		  			
+				window.location.replace(url);
+	  		},
+	  		error : function(request, status, error) {
+	  			const errorResults = request.responseJSON;
+	  			for (const i in errorResults) {
+	  				alert(errorResults[i].field + ' - ' + errorResults[i].message);
+	  			}
+	  		}
+	  	});
+	}
+</script>
