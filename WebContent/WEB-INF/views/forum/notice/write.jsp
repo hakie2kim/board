@@ -12,6 +12,7 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="question-form cardify p-4">
+                    <!-- <form method="post" enctype="multipart/form-data"> -->
                     <div class="form-group">
                         <label>제목</label>
                         <input type="text" name="title" placeholder="Enter title here" required>
@@ -20,14 +21,13 @@
                         <label>Description</label>
                         <div id="content"></div>
                     </div>
-                    <!-- <form action="#"> -->
                     <div class="form-group">
                         <div class="attachments">
                             <label>Attachments</label>
                             <label>
                                 <span class="lnr lnr-paperclip"></span> Add File
                                 <span>or Drop Files Here</span>
-                                <input type="file" style="display:none;">
+                                <input type="file" name="attFile" style="display:inline-block;" multiple>
                             </label>
                         </div>
                     </div>
@@ -59,18 +59,43 @@
 	}); */
 	
     function writePost() {
+		let formData = new FormData();
+		
+		/* formData.append('boardTypeSeq', 1); // 공지사항
+		formData.append('title', $('input[name=title]').val());
+		formData.append('content', $('#content').trumbowyg('html')); */
+		
+        let jsonData = {
+	        boardTypeSeq: 1, // 공지사항
+	        title: $('input[name=title]').val(),
+	        content: $('#content').trumbowyg('html')
+	    };
+		let jsonBlob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' });
+		formData.append('boardWriteDto', jsonBlob);
+		
+		// input type=file이 multiple이 아닌 경우
+		formData.append("attFiles", $('input[name=attFile]')[0].files[0]);
+		
+		/* // input type=file이 multiple인 경우
+		let attFiles = $('input[name=attFile]')[0].files;
+		for (let i = 0; i < attFiles.length; i++) {
+			formData.append("attFile", attFiles[i]);
+		} */
+		
+		console.dir(formData);
+		
+		/* let entries = formData.entries();
+		for (const pair of entries) {
+		    console.log(pair[0]+ ', ' + pair[1]); 
+		} */
+		
 	  	$.ajax({        
 	  		type : 'post',
+	  		// enctype: 'multipart/form-data', // 파일 업로드
 	  		url : '<%=ctx%>/forum/notice/write.rest',
-	  		headers : {
-	  			'content-type': 'application/json'
-	  		},
-	  		dataType : 'json',
-	  		data : JSON.stringify({
-	  			boardTypeSeq: 1, // 공지사항
-	  			title: $('input[name=title]').val(),
-	  			content: $('#content').trumbowyg('html')
-	  		}),
+	  		data : formData,
+	  		processData: false,
+	  		contentType: false,
 	  		success : function(result) {
 	  			let url = '<%=ctx%>/forum/notice/readPage.do?boardSeq=';
 				url += result.boardSeq;
