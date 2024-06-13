@@ -34,7 +34,9 @@ public class BoardService {
 	}
 
 	public boolean writePost(BoardWriteDto boardWriteDto, MultipartFile[] attFiles) {
-		boardRepository.addBoard(boardWriteDto);
+		if (attFiles == null)
+			return boardRepository.addBoard(boardWriteDto) == 1 ? true : false;
+		
 		return uploadFiles(boardWriteDto, attFiles);
 	}
 	

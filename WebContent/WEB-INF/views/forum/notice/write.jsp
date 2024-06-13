@@ -92,8 +92,9 @@
 	  	$.ajax({        
 	  		type : 'post',
 	  		// enctype: 'multipart/form-data', // 파일 업로드
-	  		url : '<%=ctx%>/forum/notice/write.rest',
-	  		data : formData,
+	  		url: '<%=ctx%>/forum/notice/write.rest',
+	  		data: formData,
+	  		// async: false, // ERR_CONNECT_RESET 해결
 	  		processData: false,
 	  		contentType: false,
 	  		success : function(result) {

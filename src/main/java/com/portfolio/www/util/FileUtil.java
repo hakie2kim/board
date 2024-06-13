@@ -1,13 +1,9 @@
 package com.portfolio.www.util;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -16,6 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,15 +20,15 @@ import com.portfolio.www.dto.BoardAttachDto;
 
 @Component
 public class FileUtil {
-	private final String SAVE_PATH;
+	@Value("#{config['file.save.path']}")
+	private String SAVE_PATH;
 
-	private FileUtil() {
-		Calendar calendar = Calendar.getInstance();
-		int year = calendar.get(Calendar.YEAR);
-		int month = calendar.get(Calendar.MONTH) + 1;
-		int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-		SAVE_PATH = "C:/dev/tmp/" + year + "/" + month + "/" + day;
+	private FileUtil() { 
+		 Calendar calendar = Calendar.getInstance(); 
+		 int year = calendar.get(Calendar.YEAR); int month = calendar.get(Calendar.MONTH) + 1;
+		 int day = calendar.get(Calendar.DAY_OF_MONTH);
+		 SAVE_PATH += "/" + year + "/" + month + "/" + day; 
 	}
 
 	public File saveFile(MultipartFile mf) throws IllegalStateException, IOException {
