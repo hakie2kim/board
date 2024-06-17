@@ -4,18 +4,8 @@
 
 ## 🔨 기능 요구사항
 
-### 회원 가입
-
-#### Sequence Diagram
-
-##### 회원 가입
-
-![회원가입-2024-05-29-140926](https://github.com/hakie2kim/board/assets/115719016/273fd06c-2f90-4f35-87fc-dae4f3bb301c)
-
-##### 이메일 인증
-
-![이메일인증-2024-05-29-142824](https://github.com/hakie2kim/board/assets/115719016/32b975f1-9840-496e-8d6f-484bea2cd6e1)
-
+<details>
+<summary>회원 가입</summary>
 - 회원 가입 시 제약 사항
   - [x] 아이디는 공백 또는 빈 칸일 수 없고 4~20자의 영어 소문자, 숫자만 사용 가능
   - [x] 이미 존재하는 아이디로는 가입 불가
@@ -27,6 +17,7 @@
   - [x] 인증 링크를 포함한 이메일 전송
   - [x] 사용자가 인증 링크를 클릭한 후 인증 여부를 DB에 반영
   - [ ] 만료된 인증 링크로 접속 시 이메일 재전송
+</details>
 
 ### 로그인, 로그아웃
 
@@ -57,168 +48,9 @@
   - [x] 내용은 공백 또는 빈 칸일 수 없고 5~1000자 사이
   - [ ] 파일당 10MB까지 첨부 가능
 
-### 프로젝트 환경 설정
+### [Sequence Diagram](https://velog.io/@hakie2kim/Sequence-Diagram)
 
-#### Docker DB
-
-```
-# for Windows
-docker run --name mysql-lecture -p 53306:3306 -v c:/dev/docker/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=admin_123 -d mysql:8.3.0
-
-# for Mac
-docker run --name mysql-lecture -p 53306:3306 -v ~/dev/docker/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=admin_123 -d mysql:8.3.0
-```
-
-#### MyBatis
-
-##### `pom.xml`
-
-```xml
-<dependency>
-	<groupId>org.mybatis</groupId>
-	<artifactId>mybatis</artifactId>
-	<version>3.5.16</version>
-</dependency>
-<dependency>
-	<groupId>org.mybatis</groupId>
-	<artifactId>mybatis-spring</artifactId>
-	<version>2.1.2</version>
-</dependency>
-```
-
-`mybatis-spring` 의존성 추가할 때 `spring-context`, `spring-jdbc`와 호환되는 버전을 확인하자. `spring` 버전 `5.x.x`와 호환되는 것을 확인할 수 있다.
-
-##### `src/main/resources/context-beans.xml`
-
-```xml
-<!-- MyBatis start -->
-<!-- DAO 구현체 역할을 대신 해주는 클래스 기본설정 4가지가 필요 -->
-<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-	<!-- 1. DB에 접속 하기 위해서 설정 -->
-	<property name="dataSource" ref="dataSource" />
-
-	<!-- 2. MyBatis 기본 설정 -->
-	<property name="configLocation" value="classpath:mybatis-config.xml" />
-
-	<!-- 3. query가 적힌 xml 위치 -->
-	<property name="mapperLocations" value="classpath:sql/SQL.*.xml" />
-
-	<!-- 4. 트랜잭션 관리 -->
-	<property name="transactionFactory">
-		<bean class="org.mybatis.spring.transaction.SpringManagedTransactionFactory" />
-	</property>
-</bean>
-
-<!-- 작업 지시서 DAO 위치를 지정해야 사용 할 수 있음 -->
-<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-	<property name="basePackage" value="com.portfolio.www.dao.mybatis" />
-</bean>
-
-<!-- 트랜잭션 관리를 위한 bean -->
-<bean id="transactionManager"
-	class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-	<property name="dataSource" ref="dataSource" />
-</bean>
-<!-- MyBatis end -->
-```
-
-##### `src/main/resources/mybatis-config.xml`
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
-	<settings>
-		<!-- 예) member_id -> memberId -->
-		<setting name="mapUnderscoreToCamelCase" value="true" />
-	</settings>
-
-  <!-- 쿼리 수행 결과를 DTO에 자동 매핑하기 위해 DTO 검색 -->
-	<typeAliases>
-		<package name="com.portfolio.www.dto" />
-	</typeAliases>
-	<!-- 개별로 setting 하는 방법
-	<typeAlias alias="Employees" type="com.edu.dto.Employees" />
-	-->
-</configuration>
-```
-
-###### `<typeAliases>`
-
-MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는 `com.portfolio.www.dto` 패키지 내의 모든 클래스를 대상으로 `@Alias` 애너테이션이 없다면 클래스 이름을 소문자로 변환하여 별칭으로 등록합니다. 예를 들어, `com.portfolio.www.dto.Member` 클래스는 `member`라는 별칭으로 등록됩니다.
-
-###### `<typeAlias>`
-
-개별 클래스를 명시적으로 별칭과 매핑할 수 있습니다. 이 방법은 패키지 단위 설정 대신 특정 클래스에 대해 별칭을 설정할 때 사용됩니다. 주석 처리된 예제에서는 com.edu.dto.Employees 클래스를 Employees라는 별칭으로 설정합니다.
-
-#### Tiles
-
-##### `pom.xml`
-
-```xml
-<dependency>
-	<groupId>org.apache.tiles</groupId>
-	<artifactId>tiles-core</artifactId>
-	<version>3.0.8</version>
-</dependency>
-<dependency>
-	<groupId>org.apache.tiles</groupId>
-	<artifactId>tiles-jsp</artifactId>
-	<version>3.0.8</version>
-</dependency>
-<dependency>
-	<groupId>org.apache.tiles</groupId>
-	<artifactId>tiles-servlet</artifactId>
-	<version>3.0.8</version>
-</dependency>
-<dependency>
-	<groupId>org.apache.tiles</groupId>
-	<artifactId>tiles-extras</artifactId>
-	<version>3.0.8</version>
-</dependency>
-```
-
-##### `WebContent/WEB-INF/tiles/tiles-config.xml`
-
-###### 기본 레이아웃
-
-```xml
-<definition name="tiles-default" template="/WEB-INF/views/layout/default.jsp">
-	<put-attribute name="menu" value="/WEB-INF/views/layout/menu.jsp" />
-	<put-attribute name="body" value="" />
-	<put-attribute name="footer" value="/WEB-INF/views/layout/footer.jsp" />
-</definition>
-```
-
-###### 회원가입, 로그인 페이지
-
-```xml
-<!-- 회원가입 -->
-<definition name="auth/join" extends="tiles-default">
-	<put-attribute name="title" value="회원가입" />
-	<put-attribute name="body" value="/WEB-INF/views/auth/join.jsp" />
-</definition>
-<!-- 로그인 -->
-<definition name="auth/login" extends="tiles-default">
-	<put-attribute name="title" value="로그인" />
-	<put-attribute name="body" value="/WEB-INF/views/auth/login.jsp" />
-</definition>
-```
-
-###### 각 요청에 대한 매핑 화면
-
-```xml
-<!-- 결과로 /WEB-INF/views/layout/default.jsp 화면이 반환되고 이 화면에는 menu, body, footer가 존재 -->
-<definition name="WILDCARD:*" extends="tiles-default">
-	<put-attribute name="body" value="/WEB-INF/views/{1}.jsp" />
-</definition>
-<definition name="WILDCARD:*/*" extends="tiles-default">
-	<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp" />
-</definition>
-<definition name="WILDCARD:*/*/*" extends="tiles-default">
-	<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp" />
-</definition>
-```
+### [프로젝트 환경 설정](https://velog.io/@hakie2kim/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95)
 
 ### RestController 구성 및 요청
 
@@ -244,7 +76,7 @@ MyBatis가 DTO 클래스를 검색할 패키지를 지정합니다. 여기서는
 
 ### [게시물 목록에서 필요한 파라미터가 없는 경우](https://velog.io/@hakie2kim/%EA%B2%8C%EC%8B%9C%EB%AC%BC-%EB%AA%A9%EB%A1%9D%EC%97%90%EC%84%9C-%ED%95%84%EC%9A%94%ED%95%9C-%ED%8C%8C%EB%9D%BC%EB%AF%B8%ED%84%B0%EA%B0%80-%EC%97%86%EB%8A%94-%EA%B2%BD%EC%9A%B0)
 
-### [JSP`의 EL 값 조회](https://velog.io/@hakie2kim/JSP%EC%9D%98-EL-%EA%B0%92-%EC%A1%B0%ED%9A%8C)
+### [JSP의 EL 값 조회](https://velog.io/@hakie2kim/JSP%EC%9D%98-EL-%EA%B0%92-%EC%A1%B0%ED%9A%8C)
 
 ### [boolean 필드에 Lombok `@Getter` 애너테이션 사용 하는 경우](https://velog.io/@hakie2kim/boolean-%ED%95%84%EB%93%9C%EC%97%90-Lombok-Getter-%EC%95%A0%EB%84%88%ED%85%8C%EC%9D%B4%EC%85%98-%EC%82%AC%EC%9A%A9-%ED%95%98%EB%8A%94-%EA%B2%BD%EC%9A%B0)
 
