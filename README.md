@@ -4,6 +4,16 @@
 
 배포 경험을 위해 CRUD의 가장 기본적인 기능을 포함한 회원 가입, 로그인/로그아웃, 게시판, 댓글 기능을 구현한 웹 페이지
 
+## 📚 기술 스택
+
+- 서버 사이드 렌더링: `Tiles` `JSP`
+- 벡엔드: `Spring`
+- 데이터베이스: `MyBatis` `MySQL` `Docker`
+- 배치: `Maven`
+- 클라우드: `AWS - EC2, RDS`
+- 서버: `Ngnix`
+- 기타 도구: `MobaXterm` `Sourcetree` `Github` `Notion`
+
 ## 🔨 기능 요구사항
 
 ### 회원 가입
