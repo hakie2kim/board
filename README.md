@@ -12,7 +12,7 @@
 - 배치: `Maven`
 - 클라우드: `AWS - EC2, RDS`
 - 서버: `Ngnix`
-- 기타 도구: `MobaXterm` `Sourcetree` `Github` `Notion`
+- 기타 도구: `MobaXterm` `FileZilla` `Sourcetree` `Github` `Notion`
 
 ## 🔨 기능 요구사항
 
