@@ -34,9 +34,12 @@ public class BoardService {
 	}
 
 	public boolean writePost(BoardWriteDto boardWriteDto, MultipartFile[] attFiles) {
+		// 첨부파일이 없는 경우
 		if (attFiles == null)
 			return boardRepository.addBoard(boardWriteDto) == 1 ? true : false;
 		
+		// 첨부파일이 있는 경우
+		boardRepository.addBoard(boardWriteDto);
 		return uploadFiles(boardWriteDto, attFiles);
 	}
 	

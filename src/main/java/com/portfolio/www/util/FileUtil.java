@@ -18,21 +18,25 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.portfolio.www.dto.BoardAttachDto;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class FileUtil {
 	@Value("#{config['file.save.path']}")
-	private String SAVE_PATH;
-
+	private String BASE_SAVE_PATH;
+	private String savePath;
 
 	private FileUtil() { 
 		 Calendar calendar = Calendar.getInstance(); 
 		 int year = calendar.get(Calendar.YEAR); int month = calendar.get(Calendar.MONTH) + 1;
 		 int day = calendar.get(Calendar.DAY_OF_MONTH);
-		 SAVE_PATH += "/" + year + "/" + month + "/" + day; 
+		 savePath = BASE_SAVE_PATH + "/" + year + "/" + month + "/" + day;
+		 log.info("savePath - {}", savePath);
 	}
 
 	public File saveFile(MultipartFile mf) throws IllegalStateException, IOException {
-		File file = new File(SAVE_PATH);
+		File file = new File(savePath);
 
 		// 1. SAVE_PATH 폴더가 없는 경우 만든다.
 		if (!file.exists()) {
@@ -42,7 +46,7 @@ public class FileUtil {
 		// 2. 파일 이름을 UUID를 이용해 바꾼다.
 		int extIdx = mf.getOriginalFilename().indexOf('.');
 
-		file = new File(SAVE_PATH,
+		file = new File(savePath,
 				UUID.randomUUID().toString().replaceAll("-", "") + mf.getOriginalFilename().substring(extIdx));
 		mf.transferTo(file);
 

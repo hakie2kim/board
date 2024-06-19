@@ -76,10 +76,10 @@
 		// input type=file이 multiple이 아닌 경우
 		formData.append("attFiles", $('input[name=attFile]')[0].files[0]);
 		
-		/* // input type=file이 multiple인 경우
-		let attFiles = $('input[name=attFile]')[0].files;
+		// input type=file이 multiple인 경우
+		/* let attFiles = $('input[name=attFile]')[0].files;
 		for (let i = 0; i < attFiles.length; i++) {
-			formData.append("attFile", attFiles[i]);
+			formData.append("attFiles", attFiles[i]);
 		} */
 		
 		console.dir(formData);
