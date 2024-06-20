@@ -124,6 +124,11 @@
 - 공지사항 게시글 작성 시, `@NotBlank` 애너테이션을 `boardTypeSeq` 필드에 적용했으나, 이는 `Integer` 타입에서는 사용할 수 없어서 발생한 오류
 - `boardTypeSeq` 필드의 검증 애너테이션을 `@NotNull`로 변경하여 문제를 해결
 
+#### [@Value는 인스턴스화 이후 처리된다.](https://velog.io/@hakie2kim/Value%EB%8A%94-%EC%9D%B8%EC%8A%A4%ED%84%B4%EC%8A%A4%ED%99%94-%EC%9D%B4%ED%9B%84-%EC%B2%98%EB%A6%AC%EB%90%9C%EB%8B%A4)
+
+- `@Value`로 파일 경로를 불러올 때, Bean 인스턴스화가 먼저 진행되어 `BASE_SAVE_PATH`가 null로 지정
+- 생성자의 파라미터에 `@Value`를 사용하거나, `@PostConstruct`로 초기화 작업을 수행하여 값을 올바르게 설정
+
 ## 📝 메모
 
 #### [Github SSH Key](https://velog.io/@hakie2kim/Github-SSH-Key)

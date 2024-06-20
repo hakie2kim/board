@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,18 +26,19 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class FileUtil {
 	@Value("#{config['file.save.path']}")
-	private String BASE_SAVE_PATH;
-	private String savePath;
-
-	private FileUtil() { 
-		 Calendar calendar = Calendar.getInstance(); 
-		 int year = calendar.get(Calendar.YEAR); int month = calendar.get(Calendar.MONTH) + 1;
-		 int day = calendar.get(Calendar.DAY_OF_MONTH);
-		 savePath = BASE_SAVE_PATH + "/" + year + "/" + month + "/" + day;
-		 log.info("savePath - {}", savePath);
+    private String savePath;
+	
+	@PostConstruct
+	private void addDateToSavePath() { 
+		Calendar calendar = Calendar.getInstance(); 
+		int year = calendar.get(Calendar.YEAR); 
+		int month = calendar.get(Calendar.MONTH) + 1;
+		int day = calendar.get(Calendar.DAY_OF_MONTH); 
+		savePath += "/" + year + "" + month + "" + day; 
 	}
 
 	public File saveFile(MultipartFile mf) throws IllegalStateException, IOException {
+		// addDateToSavePath();
 		File file = new File(savePath);
 
 		// 1. SAVE_PATH 폴더가 없는 경우 만든다.
