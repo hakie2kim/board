@@ -27,9 +27,25 @@
                             <label>
                                 <span class="lnr lnr-paperclip"></span> Add File
                                 <span>or Drop Files Here</span>
-                                <input type="file" name="attFile" style="display:inline-block;" multiple>
+                                <input type="file" name="attFile" style="display:inline-block;">
                             </label>
                         </div>
+                        <div class="attachments">
+                            <label>Attachments</label>
+                            <label>
+                                <span class="lnr lnr-paperclip"></span> Add File
+                                <span>or Drop Files Here</span>
+                                <input type="file" name="attFile" style="display:inline-block;">
+                            </label>
+                        </div>
+                        <div class="attachments">
+                            <label>Attachments</label>
+                            <label>
+                                <span class="lnr lnr-paperclip"></span> Add File
+                                <span>or Drop Files Here</span>
+                                <input type="file" name="attFile" style="display:inline-block;">
+                            </label>
+                        </div>                        
                     </div>
                     <!-- </form> -->
                     <div class="form-group">
@@ -74,13 +90,22 @@
 		formData.append('boardWriteDto', jsonBlob);
 		
 		// input type=file이 multiple이 아닌 경우
-		formData.append("attFiles", $('input[name=attFile]')[0].files[0]);
+		// formData.append("attFiles", $('input[name=attFile]')[0].files[0]);
 		
 		// input type=file이 multiple인 경우
 		/* let attFiles = $('input[name=attFile]')[0].files;
 		for (let i = 0; i < attFiles.length; i++) {
 			formData.append("attFiles", attFiles[i]);
 		} */
+		
+		let attFiles = $('input[name=attFile]')[0].files;
+		for (let i = 0; i < 3; i++) {
+			let attFile = $('input[name=attFile]')[i].files;
+			
+			// 업로드 하려는 파일만 포함
+			if (attFile.length != 0)
+				formData.append("attFiles", attFile[0]);
+		}
 		
 		console.dir(formData);
 		
